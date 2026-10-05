@@ -1,0 +1,208 @@
+/* Halaman Overview: grafik batang, legenda, donat, dan daftar kategori. */
+
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, .85fr);
+  gap: 17px;
+  margin-bottom: 17px;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+  color: #869087;
+  font-size: 10px;
+}
+
+.chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.planned {
+  background: #b4ceb0;
+}
+
+.legend-dot.actual {
+  background: #517659;
+}
+
+.chart-legend b {
+  margin-left: auto;
+  color: #334436;
+  font-size: 15px;
+}
+
+.chart-legend small {
+  color: #9ba29c;
+  font-size: 10px;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.bar-chart {
+  height: 185px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 20px 7px 0;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 44px, #f1f3ef 45px);
+  margin-top: 8px;
+}
+
+.bar-group {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  width: 10%;
+}
+
+.bars {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.bar {
+  width: 12px;
+  border-radius: 4px 4px 1px 1px;
+  min-height: 10px;
+}
+
+.planned-bar {
+  background: #c6dbc1;
+}
+
+.actual-bar {
+  background: #5d8561;
+}
+
+.bar-group small {
+  font-size: 10px;
+  color: #9ca49d;
+}
+
+.donut-wrap {
+  display: grid;
+  place-items: center;
+  margin: 21px 0 17px;
+}
+
+.donut {
+  width: 145px;
+  height: 145px;
+  border-radius: 50%;
+  background: conic-gradient(#8fbf80 0 42%, #c8ddbd 42% 86%, #e6c98d 86% 92%, #df9f83 92%);
+  display: grid;
+  place-items: center;
+}
+
+.donut:after {
+  content: '';
+  position: absolute;
+  width: 103px;
+  height: 103px;
+  background: white;
+  border-radius: 50%;
+}
+
+.donut > div {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donut strong {
+  font-size: 17px;
+}
+
+.donut span {
+  color: #a0a7a0;
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  color: #69746b;
+  font-size: 11px;
+}
+
+.category-row span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.category-row i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.category-row b {
+  color: #47534a;
+  font-size: 11px;
+}
+
+.category-row small {
+  font-size: 10px;
+  color: #9ca59d;
+  font-weight: 400;
+  margin-left: 11px;
+}
+
+@media (max-width: 900px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .chart-legend {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .chart-legend b {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .bar-chart {
+    height: 160px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .bar {
+    width: 10px;
+  }
+
+  .donut {
+    width: 132px;
+    height: 132px;
+  }
+}

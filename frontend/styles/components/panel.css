@@ -1,0 +1,54 @@
+/* Kartu panel, judul panel, dan varian panel tabel. */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  box-shadow: 0 2px 10px #30473006;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.panel-heading h2 {
+  font-size: 14px;
+  margin: 0;
+  letter-spacing: -.2px;
+}
+
+.panel-heading p {
+  color: #99a19b;
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+
+.panel-heading select {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: #657067;
+  padding: 7px 27px 7px 10px;
+  background: #fff;
+  font-size: 11px;
+}
+
+.table-panel {
+  padding-bottom: 7px;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .panel-heading {
+    gap: 10px;
+  }
+}

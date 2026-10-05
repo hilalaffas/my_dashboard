@@ -1,0 +1,19 @@
+/* Tampilan kosong (sel tabel kosong dan kartu kosong). */
+
+.empty-cell {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 16px 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 36px 20px;
+}
+
+.empty-state p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}

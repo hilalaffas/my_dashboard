@@ -1,0 +1,13 @@
+/* Token warna dasar (CSS variables). */
+
+:root {
+  color-scheme: light;
+  --background: #f7f8f5;
+  --foreground: #1f2a22;
+  --muted: #6f796f;
+  --line: #e5e8e1;
+  --panel: #ffffff;
+  --green: #4f7554;
+  --soft-green: #edf5ea;
+  --cream: #fbf9f3;
+}

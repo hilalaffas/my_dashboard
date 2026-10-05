@@ -1,0 +1,98 @@
+/* Halaman Cost estimates: tabel debit/kredit/saldo. */
+
+.cost-detail-page .page-heading {
+  margin-bottom: 24px;
+}
+
+.cost-metrics {
+  margin-bottom: 17px;
+}
+
+.detail-table-panel {
+  padding-bottom: 8px;
+}
+
+.detail-table-panel .panel-heading {
+  align-items: center;
+}
+
+.estimate-table {
+  min-width: 720px;
+}
+
+.estimate-table th {
+  background: #f7faf5;
+  padding-top: 11px;
+  color: #6d836f;
+}
+
+.estimate-table td {
+  color: #526158;
+}
+
+.estimate-table .numeric {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.estimate-table .estimate-type {
+  color: #526d58;
+  font-weight: 700;
+}
+
+.estimate-table .debit-cell {
+  color: #536b24;
+  background: #f4f8a6;
+  font-weight: 700;
+}
+
+.estimate-table .credit-cell {
+  color: #547260;
+  background: #edf5ed;
+  font-weight: 700;
+}
+
+.estimate-table .balance-cell {
+  color: #727e75;
+}
+
+.estimate-table tfoot th {
+  color: #35573d;
+  border-top: 2px solid #dfe8dc;
+  border-bottom: 0;
+  padding-top: 14px;
+}
+
+@media (max-width: 640px) {
+  .cost-detail-page .page-heading {
+    margin-bottom: 20px;
+  }
+
+  .cost-detail-page .panel-heading {
+    display: block;
+  }
+
+  .cost-detail-page .panel-heading .outline-button {
+    margin-top: 14px;
+  }
+
+  .cost-metrics .metric-card strong {
+    font-size: 15px;
+  }
+
+  .detail-table-panel {
+    padding: 13px 10px 8px;
+  }
+
+  .detail-table-panel .table-wrap {
+    margin-top: 16px;
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+
+  .estimate-table th,
+  .estimate-table td {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}

@@ -1,0 +1,13 @@
+/* Notifikasi toast. */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #263c2c;
+  color: white;
+  border-radius: 9px;
+  padding: 12px 15px;
+  font-size: 12px;
+  box-shadow: 0 8px 25px #263c2c33;
+}

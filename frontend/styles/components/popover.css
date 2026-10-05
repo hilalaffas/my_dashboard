@@ -1,0 +1,48 @@
+/* Popover dan isinya (notifikasi, menu profil). */
+
+.popover-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px #263c2c26;
+  padding: 6px;
+}
+
+.popover-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #4a554c;
+  text-decoration: none;
+}
+
+.popover-item:hover {
+  background: #edf4e9;
+}
+
+.popover-list p {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4a554c;
+}
+
+.popover-list p + p {
+  border-top: 1px solid var(--line);
+}
