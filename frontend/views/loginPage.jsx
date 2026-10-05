@@ -2,85 +2,227 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/auth/authProvider'
+import { CredentialsPanel } from '@/components/auth/credentialsPanel'
+import { FormMessage } from '@/components/auth/formMessage'
+import { GoogleSignInButton } from '@/components/auth/googleSignInButton'
+import { LoginAside } from '@/components/auth/loginAside'
+import { LoginHeader } from '@/components/auth/loginHeader'
+import { VerifyCodeForm } from '@/components/auth/verifyCodeForm'
+import { useAuthConfig } from '@/hooks/useAuthConfig'
+import { authApi } from '@/services/authService'
+
+const RESEND_SECONDS = 60
+
+function copyFor(isSignup, step, email) {
+  if (step === 'verify') {
+    return {
+      title: 'Periksa email Anda',
+      subtitle: `Kami mengirim kode verifikasi ke ${email || 'email Anda'}`,
+    }
+  }
+  if (isSignup)
+    return { title: 'Buat akun Anda', subtitle: 'Mulai rapikan rencana biaya Anda di satu tempat' }
+  return { title: 'Selamat datang kembali', subtitle: 'Masukkan kredensial Anda untuk mengakses akun' }
+}
+
 export function LoginPage() {
-  const { authEnabled, status, login } = useAuth()
+  const { authEnabled, status, login, setUser } = useAuth()
   const router = useRouter()
-  const [username, setUsername] = useState('')
+  const { loaded, failed, config } = useAuthConfig()
+
+  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
+  const [step, setStep] = useState('details') // 'details' | 'verify'
+  const [showOptions, setShowOptions] = useState(false)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [code, setCode] = useState('')
+  const [message, setMessage] = useState({ type: '', text: '' })
+  const [busy, setBusy] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+
+  const isSignup = mode === 'signup'
+  const googleEnabled = Boolean(config.googleClientId)
+  const showPanel = isSignup || showOptions || !googleEnabled
+
+  // Mode lokal tidak punya login; yang sudah login langsung ke dashboard
   useEffect(() => {
     if (!authEnabled || status === 'authenticated') router.replace('/overview')
   }, [authEnabled, status, router])
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!username.trim() || !password) return setError('Username dan password wajib diisi.')
-    setSubmitting(true)
-    setError('')
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [cooldown])
+
+  /** Menjalankan aksi async dengan status "memproses" dan pesan error seragam. */
+  async function run(task) {
+    setBusy(true)
+    setMessage({ type: '', text: '' })
     try {
-      await login(username.trim(), password)
-      router.replace('/overview')
+      await task()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login gagal.')
-      setSubmitting(false)
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Terjadi kesalahan.' })
+    } finally {
+      setBusy(false)
     }
   }
-  if (status !== 'anonymous')
+
+  function enterApp(user) {
+    setUser(user)
+    router.replace('/overview')
+  }
+
+  function switchMode(next) {
+    setMode(next)
+    setStep('details')
+    setShowOptions(next === 'signup')
+    setPassword('')
+    setCode('')
+    setMessage({ type: '', text: '' })
+  }
+
+  function handleCredentials(e) {
+    e.preventDefault()
+    if (!email.trim() || !password) {
+      return setMessage({ type: 'error', text: 'Email dan password wajib diisi.' })
+    }
+    if (isSignup) {
+      if (password.length < 8) return setMessage({ type: 'error', text: 'Password minimal 8 karakter.' })
+      return run(async () => {
+        await authApi.register(email.trim(), password)
+        setStep('verify')
+        setCooldown(RESEND_SECONDS)
+        setMessage({ type: 'info', text: 'Kode dikirim dan berlaku 10 menit.' })
+      })
+    }
+    return run(async () => {
+      await login(email.trim(), password)
+      router.replace('/overview')
+    })
+  }
+
+  function handleVerify(e) {
+    e.preventDefault()
+    run(async () => enterApp(await authApi.verifyEmail(email.trim(), code)))
+  }
+
+  function handleResend() {
+    run(async () => {
+      await authApi.resendCode(email.trim())
+      setCooldown(RESEND_SECONDS)
+      setMessage({ type: 'info', text: 'Kode baru dikirim.' })
+    })
+  }
+
+  function handleGoogle(credential) {
+    run(async () => enterApp(await authApi.google(credential)))
+  }
+
+  if (status !== 'anonymous' || !loaded)
     return (
       <div className="auth-loading" role="status">
         Memuat…
       </div>
     )
+
+  const { title, subtitle } = copyFor(isSignup, step, email.trim())
+  const feedback = <FormMessage type={message.type}>{message.text}</FormMessage>
+
   return (
-    <main className="login-page">
-      <section className="panel login-card">
-        <div className="login-brand">
-          <span className="brand-mark">c</span>
-          <span>costly</span>
-        </div>
-        <h1>Masuk</h1>
-        <p className="login-subtitle">Masuk untuk mengakses dashboard Anda.</p>
-        <form className="form" onSubmit={handleSubmit} noValidate>
-          <label>
-            Username
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              autoCapitalize="none"
-              autoFocus
-            />
-          </label>
-          <label>
-            Password
-            <span className="password-field">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-pressed={showPassword}
-              >
-                {showPassword ? 'Sembunyi' : 'Lihat'}
-              </button>
-            </span>
-          </label>
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
-          <button type="submit" className="primary-button login-submit" disabled={submitting}>
-            {submitting ? 'Memproses…' : 'Masuk'}
-          </button>
-        </form>
-      </section>
+    <main className="lg-page">
+      <div className="lg-frame">
+        <section className="lg-form-side">
+          <div className="lg-box">
+            <LoginHeader title={title} subtitle={subtitle} />
+            {failed && (
+              <FormMessage type="error">
+                Tidak dapat terhubung ke server. Pastikan backend berjalan.
+              </FormMessage>
+            )}
+
+            <div key={`${mode}-${step}`} className="lg-step">
+              {step === 'verify' ? (
+                <VerifyCodeForm
+                  code={code}
+                  busy={busy}
+                  cooldown={cooldown}
+                  onCodeChange={setCode}
+                  onSubmit={handleVerify}
+                  onResend={handleResend}
+                  onChangeEmail={() => {
+                    setStep('details')
+                    setCode('')
+                    setMessage({ type: '', text: '' })
+                  }}
+                >
+                  {feedback}
+                </VerifyCodeForm>
+              ) : (
+                <>
+                  {!isSignup && googleEnabled && (
+                    <>
+                      <GoogleSignInButton
+                        clientId={config.googleClientId}
+                        onCredential={handleGoogle}
+                        onError={(text) => setMessage({ type: 'error', text })}
+                      />
+                      <div className="lg-divider">
+                        <span />
+                        <em>atau</em>
+                        <span />
+                      </div>
+                      <button
+                        type="button"
+                        className="lg-btn lg-btn-outline"
+                        aria-expanded={showPanel}
+                        onClick={() => setShowOptions((v) => !v)}
+                      >
+                        {showOptions ? 'Sembunyikan opsi lain' : 'Tampilkan opsi lain'}
+                      </button>
+                    </>
+                  )}
+
+                  {showPanel && (
+                    <CredentialsPanel
+                      isSignup={isSignup}
+                      email={email}
+                      password={password}
+                      busy={busy}
+                      submitLabel={isSignup ? 'Buat akun' : 'Masuk'}
+                      onEmailChange={setEmail}
+                      onPasswordChange={setPassword}
+                      onSubmit={handleCredentials}
+                    >
+                      {feedback}
+                    </CredentialsPanel>
+                  )}
+
+                  {!showPanel && feedback}
+                </>
+              )}
+            </div>
+
+            {step === 'details' &&
+              (config.registrationEnabled ? (
+                <p className="lg-switch">
+                  {isSignup ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}
+                  <button
+                    type="button"
+                    className="lg-link lg-link-strong"
+                    onClick={() => switchMode(isSignup ? 'signin' : 'signup')}
+                  >
+                    {isSignup ? 'Masuk' : 'Daftar'}
+                  </button>
+                </p>
+              ) : (
+                <p className="lg-switch">Belum punya akun? Hubungi admin sistem.</p>
+              ))}
+          </div>
+        </section>
+
+        <LoginAside />
+      </div>
     </main>
   )
 }

@@ -2,7 +2,7 @@ import { delay } from '@/lib/delay'
 const faqs = [
   {
     q: 'Bagaimana cara mendapatkan akun?',
-    a: 'Akun dibuat oleh admin sistem. Hubungi admin Anda untuk mendapatkan username dan password.',
+    a: 'Jika pendaftaran dibuka, Anda bisa mendaftar sendiri di halaman login dengan verifikasi email. Jika tidak, akun dibuat oleh admin sistem, jadi hubungi admin Anda.',
   },
   {
     q: 'Apakah bisa dipakai di ponsel?',

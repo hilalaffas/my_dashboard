@@ -1,0 +1,43 @@
+# Postgres lokal untuk pengembangan. Database: db_project
+# Jalankan: docker compose up -d db
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: db_project
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+
+  # ---------------------------------------------------------------------------
+  # WADAH DEPLOY (belum dipakai). Hapus tanda '#' di bawah saat siap deploy,
+  # lalu jalankan: docker compose up -d --build
+  # Ganti password database dan CORS_ORIGIN sesuai domain Anda.
+  # ---------------------------------------------------------------------------
+  # backend:
+  #   build: ./backend
+  #   depends_on: [db]
+  #   environment:
+  #     DB_URL: jdbc:postgresql://db:5432/db_project
+  #     DB_USER: postgres
+  #     DB_PASSWORD: postgres
+  #     CORS_ORIGIN: http://localhost:3000
+  #     JWT_SECRET: ganti-dengan-hasil-openssl-rand-base64-48
+  #     APP_ADMIN_USERNAME: admin
+  #     APP_ADMIN_PASSWORD: ganti-password-admin
+  #     COOKIE_SECURE: "true"   # wajib saat memakai HTTPS
+  #     APP_REGISTRATION_ENABLED: "false"   # lihat README sebelum mengaktifkan
+  #     GOOGLE_CLIENT_ID: ""                # opsional, untuk login Google
+  #   ports: ["4000:4000"]
+  #
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     args:
+  #       NEXT_PUBLIC_API_URL: http://localhost:4000   # nilai ini ikut tertanam saat build
+  #   depends_on: [backend]
+  #   ports: ["3000:3000"]
+
+volumes:
+  dbdata:

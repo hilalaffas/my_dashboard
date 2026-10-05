@@ -1,0 +1,169 @@
+/* Panel dekoratif di kanan halaman login: gradasi lembut + blur yang bergerak pelan.
+   Hanya transform dan opacity yang dianimasikan; panel disembunyikan di layar kecil sehingga animasinya tidak berjalan di ponsel. */
+
+.lg-aside {
+  position: relative;
+  display: none;
+  min-height: 420px;
+  overflow: hidden;
+  background: #dbe7dd;
+  animation: lg-aside-in 1.4s ease both;
+}
+
+@media (min-width: 1024px) {
+  .lg-aside {
+    display: block;
+  }
+}
+
+.lg-aside-base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(210, 228, 214, 0.95), transparent 39%),
+    radial-gradient(ellipse at 50% 78%, rgba(191, 216, 181, 0.92), transparent 58%),
+    linear-gradient(165deg, #b9cfbc 0%, #dce8dc 45%, #eef4e8 100%);
+}
+
+/* ---------- Gumpalan warna yang di-blur dan melayang pelan ---------- */
+.lg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.75;
+  will-change: transform;
+}
+
+.lg-blob-1 {
+  top: -90px;
+  left: -70px;
+  width: 440px;
+  height: 440px;
+  background: #cfe6c8;
+  animation: lg-drift-a 24s ease-in-out infinite alternate;
+}
+
+.lg-blob-2 {
+  top: 30%;
+  right: -100px;
+  width: 380px;
+  height: 380px;
+  background: #f1e4c2;
+  animation: lg-drift-b 28s ease-in-out infinite alternate;
+}
+
+.lg-blob-3 {
+  bottom: -150px;
+  left: 8%;
+  width: 500px;
+  height: 500px;
+  background: #a9cfa6;
+  animation: lg-drift-c 32s ease-in-out infinite alternate;
+}
+
+.lg-blob-4 {
+  top: 12%;
+  left: 38%;
+  width: 260px;
+  height: 260px;
+  background: #e6f1df;
+  opacity: 0.9;
+  animation: lg-drift-d 20s ease-in-out infinite alternate;
+}
+
+@keyframes lg-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(130px, 110px, 0) scale(1.18); }
+}
+
+@keyframes lg-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-150px, 70px, 0) scale(1.12); }
+}
+
+@keyframes lg-drift-c {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to { transform: translate3d(110px, -120px, 0) scale(0.92); }
+}
+
+@keyframes lg-drift-d {
+  from { transform: translate3d(0, 0, 0) scale(0.9); }
+  to { transform: translate3d(-90px, 130px, 0) scale(1.2); }
+}
+
+/* ---------- Butiran halus dan garis tipis ---------- */
+.lg-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image: radial-gradient(rgba(53, 48, 43, 0.45) 0.7px, transparent 0.7px);
+  background-size: 3px 3px;
+}
+
+.lg-line {
+  position: absolute;
+  inset-inline: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+  animation: lg-line-pulse 8s ease-in-out infinite alternate;
+}
+
+.lg-line-1 { top: 46%; }
+.lg-line-2 { top: 66%; opacity: 0.7; animation-delay: -4s; }
+
+@keyframes lg-line-pulse {
+  from { opacity: 0.25; }
+  to { opacity: 0.9; }
+}
+
+/* ---------- Kalimat yang bergantian muncul (fade + blur), siklus 18 detik ---------- */
+.lg-quotes {
+  position: absolute;
+  inset-inline: 48px;
+  bottom: 48px;
+  height: 4.5em;
+}
+
+.lg-quote {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  color: rgba(47, 80, 54, 0.88);
+  opacity: 0;
+  animation: lg-quote 18s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 6s);
+}
+
+@keyframes lg-quote {
+  0% { opacity: 0; filter: blur(8px); transform: translate3d(0, 12px, 0); }
+  6%, 28% { opacity: 1; filter: blur(0); transform: none; }
+  34%, 100% { opacity: 0; filter: blur(8px); transform: translate3d(0, -12px, 0); }
+}
+
+@keyframes lg-aside-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---------- Mengurangi gerak: panel diam, hanya kalimat pertama yang tampil ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .lg-aside,
+  .lg-blob,
+  .lg-line,
+  .lg-quote {
+    animation: none;
+  }
+
+  .lg-quote:first-child {
+    opacity: 1;
+  }
+}
