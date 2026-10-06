@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Semua method menerima ownerId dan hanya menyentuh data milik pengguna itu (data orang lain dijawab 404). */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -18,32 +19,34 @@ public class CostEstimateService {
     private final CostEstimateRepository repository;
 
     @Transactional(readOnly = true)
-    public List<CostEstimateResponse> list() {
-        return repository.findAllByOrderByCreatedAtAsc().stream().map(this::toResponse).toList();
+    public List<CostEstimateResponse> list(UUID ownerId) {
+        return repository.findAllByOwnerIdOrderByCreatedAtAsc(ownerId).stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public CostEstimateTotals totals() {
-        List<CostEstimate> all = repository.findAll();
+    public CostEstimateTotals totals(UUID ownerId) {
+        List<CostEstimate> all = repository.findAllByOwnerIdOrderByCreatedAtAsc(ownerId);
         BigDecimal debit = all.stream().map(CostEstimate::getDebit).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal credit = all.stream().map(CostEstimate::getCredit).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new CostEstimateTotals(debit, credit, all.size());
     }
 
-    public CostEstimateResponse create(CostEstimateRequest req) {
-        return toResponse(repository.save(apply(new CostEstimate(), req)));
+    public CostEstimateResponse create(UUID ownerId, CostEstimateRequest req) {
+        CostEstimate e = new CostEstimate();
+        e.setOwnerId(ownerId);
+        return toResponse(repository.save(apply(e, req)));
     }
 
-    public CostEstimateResponse update(UUID id, CostEstimateRequest req) {
-        return toResponse(apply(find(id), req));
+    public CostEstimateResponse update(UUID ownerId, UUID id, CostEstimateRequest req) {
+        return toResponse(apply(find(ownerId, id), req));
     }
 
-    public void delete(UUID id) {
-        repository.delete(find(id));
+    public void delete(UUID ownerId, UUID id) {
+        repository.delete(find(ownerId, id));
     }
 
-    private CostEstimate find(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new NotFoundException("Estimasi tidak ditemukan."));
+    private CostEstimate find(UUID ownerId, UUID id) {
+        return repository.findByIdAndOwnerId(id, ownerId).orElseThrow(() -> new NotFoundException("Estimasi tidak ditemukan."));
     }
 
     private CostEstimate apply(CostEstimate e, CostEstimateRequest req) {

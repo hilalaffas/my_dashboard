@@ -1,0 +1,15 @@
+/* Halaman superuser: daftar pengguna dan tampilan data pengguna (hanya baca). */
+
+.adm-section {
+  margin-top: 20px;
+}
+
+.adm-section .account-list {
+  margin-top: 8px;
+}
+
+.heading-actions a.outline-button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}

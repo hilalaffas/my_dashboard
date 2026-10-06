@@ -19,6 +19,9 @@ public class CostEstimate {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "owner_id", nullable = false, updatable = false)
+    private UUID ownerId;
+
     @Column(nullable = false, length = 80)
     private String type;
 

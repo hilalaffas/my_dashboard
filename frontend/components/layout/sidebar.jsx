@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useAuth } from '@/components/auth/authProvider'
 import { Modal } from '@/components/common/modal'
 import { Popover } from '@/components/common/popover'
-import { navItems } from '@/data/navigation'
+import { adminNavItem, navItems } from '@/data/navigation'
 import { initials } from '@/lib/initials'
 import { resetAppData } from '@/lib/resetAppData'
 export function Sidebar() {
@@ -15,6 +15,7 @@ export function Sidebar() {
   const { authEnabled, user, logout } = useAuth()
   const [dialog, setDialog] = useState(null)
   const displayName = user?.fullName ?? 'User Testing'
+  const items = user?.role === 'ADMIN' ? [...navItems, adminNavItem] : navItems
   async function handleLogout() {
     await logout()
     router.replace('/login')
@@ -35,7 +36,7 @@ export function Sidebar() {
       </div>
       <nav className="side-nav" aria-label="Navigasi utama">
         <p>Workspace</p>
-        {navItems.map(({ label, href, icon: Icon }) => (
+        {items.map(({ label, href, icon: Icon }) => (
           <Link key={href} href={href} className={pathname.startsWith(href) ? 'active' : ''}>
             <Icon size={18} />
             {label}
@@ -64,7 +65,11 @@ export function Sidebar() {
           <div className="avatar dark">{initials(displayName)}</div>
           <div>
             <b>{displayName}</b>
-            <small>{user ? `@${user.username} · ${user.role}` : 'Mode lokal'}</small>
+            <small>
+              {user
+                ? `@${user.username} · ${user.role === 'ADMIN' ? 'Superuser' : 'Pengguna'}`
+                : 'Mode lokal'}
+            </small>
           </div>
           <Popover
             trigger={<MoreHorizontal size={18} />}

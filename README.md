@@ -17,7 +17,7 @@ Dashboard pengelolaan estimasi biaya pribadi (Costly). Terdiri dari **frontend**
 | Ikon | **lucide-react** |
 | Komponen dasar | shadcn/ui (`components/ui/button.jsx`), class-variance-authority, tailwind-merge |
 | Penyimpanan data | `localStorage` browser (default) atau backend lewat REST API |
-| Package manager | pnpm |
+| Package manager | npm (`package-lock.json`, `.npmrc` mengatur `legacy-peer-deps`) |
 | Runtime | Node.js 20.9+ |
 
 ### Backend (`backend/`)
@@ -77,7 +77,7 @@ backend/                         (satu paket per fitur)
     user/                        entitas pengguna, role, dan pembuatan admin pertama
   src/main/resources/
     application.yml
-    db/migration/                V1 account, V2 costestimate, V3 profile, V4 users, V5 email dan verifikasi
+    db/migration/                V1 account, V2 costestimate, V3 profile (kini dihapus), V4 users, V5 email dan verifikasi, V6 pemilik data per pengguna, V7 row level security
 
   Isi tiap paket fitur: Controller, Service, Repository, Entity, Dtos.
 ```
@@ -115,7 +115,7 @@ Halaman publik untuk memperkenalkan sistem. Struktur: Hero → Masalah → Fitur
 - **Gradasi antar bagian:** setiap bagian memakai `--from` dan `--to` di `landing.css`. Nilai `--to` sebuah bagian harus sama dengan `--from` bagian berikutnya agar transisinya mulus.
 - **Animasi:** elemen bertanda `data-reveal` muncul dengan fade + blur saat masuk layar. Variasi: `data-reveal="fade|left|right|zoom"`, jeda lewat `style={delay(ms)}`. Hero memudar dan blur saat di-scroll. Ada bilah progres di atas dan header kaca.
 - **Aksesibilitas:** mengikuti `prefers-reduced-motion` (semua langsung tampil tanpa animasi) dan tetap terbaca tanpa JavaScript.
-- **Tombol login:** `loginLink.jsx` menampilkan "Masuk" / "Klik untuk Login" bila belum login, dan "Buka dashboard" bila sudah login atau saat mode lokal.
+- **Tombol login:** `loginLink.jsx` selalu menuju `/login` dan tidak pernah langsung ke dashboard. Jika sudah ada sesi, halaman login menanyakan "Lanjutkan ke dashboard" atau "Masuk dengan akun lain". Saat mode lokal (tanpa backend), halaman login menjelaskan bahwa ini mode demo.
 - **Isi bersifat apa adanya:** tidak ada testimoni, angka pengguna, atau klaim fitur yang belum ada. Pertahankan prinsip ini saat mengubah teks.
 
 ### Header keamanan (frontend)
@@ -128,7 +128,7 @@ dan `Strict-Transport-Security` (hanya produksi). Content-Security-Policy belum 
 
 ```bash
 # Frontend  ->  http://localhost:3000
-cd frontend && pnpm install && pnpm dev
+cd frontend && npm install && npm run dev
 
 # Backend (opsional)  ->  http://localhost:4000 (butuh Java 21, Maven, Docker)
 docker compose up -d db && cd backend && mvn spring-boot:run
@@ -176,6 +176,13 @@ Pastikan `pom.xml` Anda versi terbaru, lalu jalankan `mvn clean spring-boot:run`
 
 - Tes lewat terminal: `curl -c cookie.txt -H "Content-Type: application/json" -d '{"username":"admin","password":"..."}' localhost:4000/api/auth/login`, lalu `curl -b cookie.txt localhost:4000/api/accounts`.
 
+### Data per pengguna dan superuser
+
+- Accounts, Cost estimates, Overview, dan Profil **milik masing-masing pengguna**. Pengguna biasa tidak bisa melihat atau mengubah data pengguna lain; mencoba mengakses data milik orang lain dijawab `404` (bukan `403`) agar keberadaannya tidak bocor.
+- **Superuser** adalah akun dengan role `ADMIN` (dibuat otomatis dari `APP_ADMIN_USERNAME`/`APP_ADMIN_PASSWORD`). Superuser punya menu **Pengguna** untuk melihat daftar pengguna dan data masing-masing, **hanya baca**. Superuser tidak bisa mengubah data pengguna lain.
+- Peran dan status akun diperiksa ulang ke database pada setiap permintaan, sehingga akun yang dinonaktifkan langsung kehilangan akses.
+- Data lama (sebelum fitur ini) otomatis diserahkan ke akun admin pertama oleh migrasi `V6`.
+
 ### Login, daftar, verifikasi email, dan Google
 
 Halaman `/login` memakai tampilan dua kolom: form di kiri, panel dekoratif beranimasi di kanan.
@@ -189,8 +196,7 @@ Halaman `/login` memakai tampilan dua kolom: form di kiri, panel dekoratif beran
 
 Tombol Google dan tautan "Daftar" otomatis disembunyikan jika fitur tidak aktif (frontend membaca `GET /api/auth/config`).
 
-**Pendaftaran mandiri dimatikan secara bawaan.** Alasannya: data (Accounts, Cost estimates) masih satu set yang dilihat semua pengguna.
-Selama belum dipisah per pengguna, siapa pun yang mendaftar akan melihat dan bisa mengubah data yang sama. Aktifkan hanya untuk uji coba.
+**Pendaftaran mandiri dimatikan secara bawaan** (`APP_REGISTRATION_ENABLED=false`). Data kini terpisah per pengguna, jadi aman diaktifkan, tetapi aktifkan hanya setelah email (SMTP) siap atau untuk uji coba dengan `APP_DEV_LOG_CODES=true`.
 
 Mengaktifkan pendaftaran:
 ```bash
@@ -223,8 +229,8 @@ Membantu pengguna menyusun dan memantau estimasi biaya bulanan, serta mengelola 
 ### 4.2 Aktor
 | Aktor | Peran |
 |---|---|
-| Admin | Pengguna terdaftar (role `ADMIN`); dibuat otomatis saat pertama kali backend berjalan |
-| Pengguna | Pengguna terdaftar (role `USER`). Saat ini hak aksesnya sama dengan admin |
+| Superuser | Pengguna dengan role `ADMIN`; dibuat otomatis saat pertama kali backend berjalan. Bisa melihat (hanya baca) data semua pengguna |
+| Pengguna | Pengguna terdaftar (role `USER`). Hanya bisa mengakses datanya sendiri |
 | Tamu | Belum login; hanya bisa membuka landing page dan halaman login |
 | Pendaftar | Tamu yang sedang mendaftar dan belum memverifikasi email (belum bisa masuk) |
 
@@ -233,6 +239,7 @@ Membantu pengguna menyusun dan memantau estimasi biaya bulanan, serta mengelola 
 | Halaman | Route | Fungsi utama |
 |---|---|---|
 | Landing | `/` | Halaman publik: pengenalan, fitur, keamanan, FAQ, dan tombol login di bagian bawah |
+| Pengguna (superuser) | `/admin/users` | Daftar pengguna; `/admin/users/{id}` menampilkan Accounts dan Cost estimates milik pengguna itu (hanya baca) |
 | Login | `/login` | Masuk (email/username), daftar + verifikasi email, login Google (sesuai pengaturan server); keluar dan ubah password lewat menu profil |
 | Overview | `/overview` | Ringkasan metrik, grafik bulanan, kategori teratas, estimasi terbaru, tambah estimasi, ekspor CSV |
 | Cost estimates | `/cost-estimates` | Tabel debit/kredit/saldo; tambah, ubah, hapus baris; ekspor CSV |
@@ -341,6 +348,7 @@ sequenceDiagram
 | Akun pertama | Dibuat dari `APP_ADMIN_USERNAME` dan `APP_ADMIN_PASSWORD` hanya jika tabel pengguna kosong |
 | Masuk | Boleh memakai email atau username |
 | Pendaftaran | Hanya jika `APP_REGISTRATION_ENABLED=true`; email yang sudah terverifikasi tidak bisa didaftarkan lagi |
+| Kepemilikan data | Setiap kategori dan estimasi punya pemilik; pengguna hanya mengakses miliknya, superuser hanya membaca |
 | Akun baru | Role `USER`, username dibuat dari bagian depan email, nonaktif sampai email diverifikasi |
 | Kode verifikasi | 6 digit, berlaku 10 menit, disimpan sebagai hash, maksimal 5 kali salah, kirim ulang minimal 60 detik |
 | Pendaftaran berulang | Pendaftaran yang belum terverifikasi boleh diulang (password dan kode diganti) |
@@ -349,11 +357,10 @@ sequenceDiagram
 ### 4.7 Model data
 
 ```
-Category   { id, name, subs[] }
+Category   { id, ownerId, name, subs[] }
 SubCategory{ id, name, items[] }
 Item       { id, name, amount }
-Estimate   { id, type, detail, debit, credit }
-Profile    { fullName, email }
+Estimate   { id, ownerId, type, detail, debit, credit }
 User       { id, username, email, emailVerified, passwordHash, fullName, role (ADMIN|USER), enabled }
 ```
 
@@ -370,7 +377,11 @@ User       { id, username, email, emailVerified, passwordHash, fullName, role (A
 | Cost estimate | GET / POST | `/api/cost-estimates` | Daftar, tambah |
 | Cost estimate | PUT / DELETE | `/api/cost-estimates/{id}` | Ubah, hapus |
 | Overview | GET | `/api/overview` | Ringkasan total debit, kredit, saldo, dan jumlah Accounts |
-| Profile | GET / PUT | `/api/profile` | Lihat, ubah profil |
+| Profile | GET / PUT | `/api/profile` | Profil pengguna yang login (hanya nama lengkap yang bisa diubah) |
+| Admin | GET | `/api/admin/users` | Daftar pengguna (khusus superuser) |
+| Admin | GET | `/api/admin/users/{id}` | Satu pengguna (khusus superuser) |
+| Admin | GET | `/api/admin/users/{id}/accounts` | Pohon Accounts milik pengguna itu (khusus superuser, hanya baca) |
+| Admin | GET | `/api/admin/users/{id}/cost-estimates` | Estimasi milik pengguna itu (khusus superuser, hanya baca) |
 | Auth | POST | `/api/auth/login` | Login; menyetel cookie `access_token` (httpOnly) |
 | Auth | POST | `/api/auth/logout` | Menghapus cookie |
 | Auth | GET | `/api/auth/me` | Data pengguna yang sedang login |
@@ -387,12 +398,11 @@ Kode status: `201` saat membuat, `204` saat menghapus, `400` untuk data tidak va
 (`{ message, errors }`), `404` jika data tidak ditemukan (`{ message }`).
 
 ### 4.9 Batasan saat ini (untuk perencanaan lanjutan)
-- Belum ada layar untuk menambah atau menonaktifkan pengguna; role `ADMIN` dan `USER` belum dibedakan hak aksesnya.
-- Data (Accounts, Cost estimates, Profile) masih satu set bersama, belum terpisah per pengguna. Karena itu pendaftaran mandiri dimatikan secara bawaan.
+- Superuser hanya bisa membaca data pengguna lain; belum ada layar untuk menonaktifkan atau menghapus pengguna.
 - Pendaftaran memberi tahu bila email sudah terdaftar (memudahkan pengguna, tetapi memungkinkan orang lain menebak email yang terdaftar).
 - Login Google dan pengiriman email SMTP belum diuji dengan layanan sungguhan.
 - Belum ada fitur lupa password.
-- Token tetap berlaku sampai habis masa berlakunya, termasuk setelah password diubah atau akun dinonaktifkan (`/me` memeriksa status akun, endpoint data belum).
+- Token lama tetap sah sampai habis masa berlakunya setelah password diubah (akun yang dinonaktifkan sudah langsung ditolak karena pengguna diperiksa ke database di setiap permintaan).
 - Pembatas percobaan login tersimpan di memori (hilang saat restart, tidak dibagi antar server). Di belakang proxy, IP yang terbaca bisa IP proxy.
 - Perlindungan CSRF mengandalkan cookie `SameSite=Lax` dan CORS satu origin. Untuk deploy, frontend dan backend harus satu domain induk (misalnya `app.contoh.com` dan `api.contoh.com`), dan `COOKIE_SECURE=true` dengan HTTPS.
 - Halaman Overview di frontend masih memakai data contoh; endpoint `/api/overview` sudah ada tetapi belum dipanggil.
@@ -404,10 +414,11 @@ Kode status: `201` saat membuat, `204` saat menghapus, `400` untuk data tidak va
 
 ---
 
-## 5. Deployment (disiapkan, belum dipakai)
+## 5. Deployment
 
-- `backend/Dockerfile` dan `frontend/Dockerfile` sudah tersedia (build bertahap, frontend memakai `output: 'standalone'`).
-- Di `docker-compose.yml` (root), layanan `backend` dan `frontend` sengaja **dikomentari**. Hapus tanda `#`
-  saat siap deploy, ganti password database dan `CORS_ORIGIN`, lalu jalankan `docker compose up -d --build`.
-- `NEXT_PUBLIC_API_URL` ikut tertanam saat build frontend, jadi harus diisi dengan alamat publik backend.
-- File Docker ini belum diuji di lingkungan pengembangan.
+Panduan lengkap **Supabase (database) + Render (backend) + Vercel (frontend)** ada di [`PANDUAN_DEPLOY.md`](PANDUAN_DEPLOY.md).
+Ringkasnya: browser hanya berbicara dengan Vercel; Vercel meneruskan `/api/*` ke Render (`NEXT_PUBLIC_API_URL=/` dan `BACKEND_URL=...`),
+sehingga cookie login berfungsi di semua browser.
+
+Alternatif lain: `backend/Dockerfile` dan `frontend/Dockerfile` serta `docker-compose.yml` (layanan deploy sengaja dikomentari) untuk server sendiri.
+File Docker belum diuji di lingkungan sungguhan.

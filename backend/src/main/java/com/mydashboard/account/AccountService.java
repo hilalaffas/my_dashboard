@@ -10,6 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Semua method menerima ownerId dan hanya menyentuh data milik pengguna itu.
+ * Data milik orang lain dijawab "tidak ditemukan" (404), bukan "dilarang", agar keberadaannya tidak bocor.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -20,16 +24,16 @@ public class AccountService {
     private final ItemRepository items;
 
     @Transactional(readOnly = true)
-    public List<CategoryResponse> tree() {
-        return categories.findAllByOrderByCreatedAtAsc().stream().map(this::toCategory).toList();
+    public List<CategoryResponse> tree(UUID ownerId) {
+        return categories.findAllByOwnerIdOrderByCreatedAtAsc(ownerId).stream().map(this::toCategory).toList();
     }
 
     @Transactional(readOnly = true)
-    public AccountSummary summary() {
+    public AccountSummary summary(UUID ownerId) {
         int subCount = 0;
         int itemCount = 0;
         BigDecimal total = BigDecimal.ZERO;
-        List<Category> all = categories.findAll();
+        List<Category> all = categories.findAllByOwnerIdOrderByCreatedAtAsc(ownerId);
         for (Category c : all) {
             subCount += c.getSubs().size();
             for (SubCategory s : c.getSubs()) {
@@ -40,68 +44,69 @@ public class AccountService {
         return new AccountSummary(all.size(), subCount, itemCount, total);
     }
 
-    public CategoryResponse createCategory(NameRequest req) {
+    public CategoryResponse createCategory(UUID ownerId, NameRequest req) {
         Category c = new Category();
+        c.setOwnerId(ownerId);
         c.setName(req.name().trim());
         return toCategory(categories.save(c));
     }
 
-    public CategoryResponse updateCategory(UUID id, NameRequest req) {
-        Category c = findCategory(id);
+    public CategoryResponse updateCategory(UUID ownerId, UUID id, NameRequest req) {
+        Category c = findCategory(ownerId, id);
         c.setName(req.name().trim());
         return toCategory(c);
     }
 
-    public void deleteCategory(UUID id) {
-        categories.delete(findCategory(id));
+    public void deleteCategory(UUID ownerId, UUID id) {
+        categories.delete(findCategory(ownerId, id));
     }
 
-    public SubResponse createSub(UUID categoryId, NameRequest req) {
+    public SubResponse createSub(UUID ownerId, UUID categoryId, NameRequest req) {
         SubCategory s = new SubCategory();
-        s.setCategory(findCategory(categoryId));
+        s.setCategory(findCategory(ownerId, categoryId));
         s.setName(req.name().trim());
         return toSub(subs.save(s));
     }
 
-    public SubResponse updateSub(UUID id, NameRequest req) {
-        SubCategory s = findSub(id);
+    public SubResponse updateSub(UUID ownerId, UUID id, NameRequest req) {
+        SubCategory s = findSub(ownerId, id);
         s.setName(req.name().trim());
         return toSub(s);
     }
 
-    public void deleteSub(UUID id) {
-        subs.delete(findSub(id));
+    public void deleteSub(UUID ownerId, UUID id) {
+        subs.delete(findSub(ownerId, id));
     }
 
-    public ItemResponse createItem(UUID subId, ItemRequest req) {
+    public ItemResponse createItem(UUID ownerId, UUID subId, ItemRequest req) {
         Item i = new Item();
-        i.setSubCategory(findSub(subId));
+        i.setSubCategory(findSub(ownerId, subId));
         i.setName(req.name().trim());
         i.setAmount(req.amount());
         return toItem(items.save(i));
     }
 
-    public ItemResponse updateItem(UUID id, ItemRequest req) {
-        Item i = findItem(id);
+    public ItemResponse updateItem(UUID ownerId, UUID id, ItemRequest req) {
+        Item i = findItem(ownerId, id);
         i.setName(req.name().trim());
         i.setAmount(req.amount());
         return toItem(i);
     }
 
-    public void deleteItem(UUID id) {
-        items.delete(findItem(id));
+    public void deleteItem(UUID ownerId, UUID id) {
+        items.delete(findItem(ownerId, id));
     }
 
-    private Category findCategory(UUID id) {
-        return categories.findById(id).orElseThrow(() -> new NotFoundException("Kategori tidak ditemukan."));
+    private Category findCategory(UUID ownerId, UUID id) {
+        return categories.findByIdAndOwnerId(id, ownerId).orElseThrow(() -> new NotFoundException("Kategori tidak ditemukan."));
     }
 
-    private SubCategory findSub(UUID id) {
-        return subs.findById(id).orElseThrow(() -> new NotFoundException("Sub kategori tidak ditemukan."));
+    private SubCategory findSub(UUID ownerId, UUID id) {
+        return subs.findOwned(id, ownerId).orElseThrow(() -> new NotFoundException("Sub kategori tidak ditemukan."));
     }
 
-    private Item findItem(UUID id) {
-        return items.findById(id).orElseThrow(() -> new NotFoundException("Item tidak ditemukan."));
+    private Item findItem(UUID ownerId, UUID id) {
+        return items.findOwned(id, ownerId).orElseThrow(() -> new NotFoundException("Item tidak ditemukan."));
     }
 
     private ItemResponse toItem(Item i) {

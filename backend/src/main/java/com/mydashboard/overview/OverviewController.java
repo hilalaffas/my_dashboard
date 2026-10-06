@@ -1,7 +1,9 @@
 package com.mydashboard.overview;
 
+import com.mydashboard.auth.AuthUser;
 import com.mydashboard.overview.OverviewDtos.OverviewResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,7 +16,7 @@ public class OverviewController {
     private final OverviewService service;
 
     @GetMapping
-    public OverviewResponse overview() {
-        return service.overview();
+    public OverviewResponse overview(@AuthenticationPrincipal AuthUser me) {
+        return service.overview(me.id());
     }
 }

@@ -25,7 +25,7 @@ export function HeroSection() {
               estimasi debit dan kredit, lalu pantau saldo dalam satu dashboard.
             </p>
             <div className="lp-actions" data-reveal style={delay(360)}>
-              <LoginLink className="lp-btn lp-btn-primary" label="Masuk ke dashboard" />
+              <LoginLink className="lp-btn lp-btn-primary" label="Masuk untuk memulai" />
               <a href="#fitur" className="lp-btn lp-btn-ghost">
                 Lihat fitur
               </a>

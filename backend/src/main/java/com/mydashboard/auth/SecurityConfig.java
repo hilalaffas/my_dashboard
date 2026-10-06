@@ -1,5 +1,6 @@
 package com.mydashboard.auth;
 
+import com.mydashboard.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,7 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService, UserRepository users) throws Exception {
         http
                 // CSRF dimatikan: autentikasi memakai cookie SameSite=Lax, CORS dibatasi ke satu origin,
                 // dan body hanya JSON. Jika frontend/backend beda "site", aktifkan kembali perlindungan CSRF.
@@ -35,9 +36,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/auth/config").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/auth/register",
                                 "/api/auth/verify-email", "/api/auth/resend-code", "/api/auth/google").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthFilter(jwtService, users), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

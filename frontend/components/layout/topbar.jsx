@@ -7,7 +7,7 @@ import { useAuth } from '@/components/auth/authProvider'
 import { ChangePasswordModal } from '@/components/auth/changePasswordModal'
 import { Popover } from '@/components/common/popover'
 import { useToast } from '@/components/common/toastProvider'
-import { navItems } from '@/data/navigation'
+import { adminNavItem, navItems } from '@/data/navigation'
 import { initials } from '@/lib/initials'
 import { resetAppData } from '@/lib/resetAppData'
 const notifications = [
@@ -22,6 +22,7 @@ export function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
   const displayName = user?.fullName ?? 'User Testing'
+  const items = user?.role === 'ADMIN' ? [...navItems, adminNavItem] : navItems
   const isActive = (href) => (pathname.startsWith(href) ? 'active' : '')
   async function handleLogout() {
     await logout()
@@ -42,14 +43,14 @@ export function Topbar() {
         <strong>costly</strong>
       </div>
       <nav className="top-nav" aria-label="Navigasi utama">
-        {navItems.map(({ label, href }) => (
+        {items.map(({ label, href }) => (
           <Link key={href} href={href} className={isActive(href)}>
             {label}
           </Link>
         ))}
       </nav>
       <div className={`mobile-nav ${menuOpen ? 'open' : ''}`} aria-hidden={!menuOpen}>
-        {navItems.map(({ label, href }) => (
+        {items.map(({ label, href }) => (
           <Link key={href} href={href} className={isActive(href)} onClick={() => setMenuOpen(false)}>
             {label}
             <ArrowUpRight size={14} />

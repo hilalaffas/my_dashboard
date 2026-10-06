@@ -3,6 +3,9 @@ package com.mydashboard.profile;
 import static com.mydashboard.profile.ProfileDtos.*;
 
 import com.mydashboard.common.exception.NotFoundException;
+import com.mydashboard.user.User;
+import com.mydashboard.user.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,25 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ProfileService {
 
-    private final ProfileRepository repository;
+    private final UserRepository users;
 
     @Transactional(readOnly = true)
-    public ProfileResponse get() {
-        return toResponse(current());
+    public ProfileResponse get(UUID userId) {
+        return toResponse(find(userId));
     }
 
-    public ProfileResponse update(ProfileRequest req) {
-        Profile p = current();
-        p.setFullName(req.fullName().trim());
-        p.setEmail(req.email().trim());
-        return toResponse(p);
+    public ProfileResponse update(UUID userId, ProfileRequest req) {
+        User user = find(userId);
+        user.setFullName(req.fullName().trim());
+        return toResponse(user);
     }
 
-    private Profile current() {
-        return repository.findAll().stream().findFirst().orElseThrow(() -> new NotFoundException("Profil tidak ditemukan."));
+    private User find(UUID userId) {
+        return users.findById(userId).orElseThrow(() -> new NotFoundException("Profil tidak ditemukan."));
     }
 
-    private ProfileResponse toResponse(Profile p) {
-        return new ProfileResponse(p.getFullName(), p.getEmail());
+    private ProfileResponse toResponse(User u) {
+        return new ProfileResponse(u.getUsername(), u.getFullName(), u.getEmail());
     }
 }
