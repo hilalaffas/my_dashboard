@@ -2,3 +2,7 @@ target/
 .env
 .idea/
 *.iml
+
+# Log lokal (hasil Tee-Object / mvn)
+log.txt
+*.log

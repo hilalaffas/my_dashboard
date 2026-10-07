@@ -5,6 +5,11 @@ server:
   forward-headers-strategy: native
 
 spring:
+  config:
+    # Baca .env di luar folder backend (root repo). "optional" = tidak error bila file tidak ada (mis. di Render).
+    # ../.env  -> saat dijalankan dari folder backend (mvn spring-boot:run)
+    # .env     -> saat dijalankan dari root repo atau IDE yang memakai root sebagai working directory
+    import: optional:file:../.env[.properties],optional:file:.env[.properties]
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
