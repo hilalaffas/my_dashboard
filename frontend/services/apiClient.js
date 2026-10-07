@@ -1,4 +1,4 @@
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 // '/' = mode satu origin: browser hanya bicara ke domain frontend, yang meneruskan /api/* ke backend (lihat next.config.mjs).
 // Selain itu: alamat backend lengkap (mis. http://localhost:4000), garis miring di akhir dibuang.
