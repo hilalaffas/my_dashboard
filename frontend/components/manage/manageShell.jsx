@@ -5,7 +5,7 @@ import { useSuperuserGuard } from '@/hooks/useSuperuserGuard'
 
 const tabs = [
   { label: 'Edit profil', href: '/manage/profile' },
-  { label: 'Buat akun baru', href: '/manage/register' },
+  { label: 'Manage akun', href: '/manage/users' },
 ]
 
 /** Kerangka menu Manage: judul + tab. Khusus superuser; selain itu diarahkan ke /overview oleh guard. */
@@ -23,7 +23,7 @@ export function ManageShell({ children }) {
             <span className="status-dot" /> Superuser
           </div>
           <h1>Manage</h1>
-          <p>Kelola profil Anda dan buat akun untuk pengguna baru.</p>
+          <p>Kelola profil Anda dan akun pengguna.</p>
         </div>
       </div>
 

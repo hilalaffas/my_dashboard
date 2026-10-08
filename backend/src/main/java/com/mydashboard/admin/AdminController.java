@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-/** Khusus superuser (ADMIN). Membaca data pengguna lain dan membuat akun baru. */
+/** Khusus superuser (ADMIN). Membaca data pengguna lain, membuat akun, mengubah detail, dan mengatur status aktif. */
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -30,6 +30,19 @@ public class AdminController {
     @ResponseStatus(HttpStatus.CREATED)
     public AdminUserResponse create(@AuthenticationPrincipal AuthUser me, @Valid @RequestBody CreateUserRequest req) {
         return service.createUser(me.id(), req);
+    }
+
+    @PutMapping("/{userId}")
+    public AdminUserResponse update(
+            @AuthenticationPrincipal AuthUser me, @PathVariable UUID userId, @Valid @RequestBody UpdateUserRequest req) {
+        return service.updateUser(me.id(), userId, req);
+    }
+
+    // PUT (bukan PATCH): CORS di CorsConfig hanya mengizinkan GET, POST, PUT, DELETE
+    @PutMapping("/{userId}/enabled")
+    public AdminUserResponse setEnabled(
+            @AuthenticationPrincipal AuthUser me, @PathVariable UUID userId, @Valid @RequestBody EnabledRequest req) {
+        return service.setEnabled(me.id(), userId, req.enabled());
     }
 
     @GetMapping("/{userId}")

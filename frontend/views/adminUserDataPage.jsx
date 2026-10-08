@@ -45,7 +45,7 @@ export function AdminUserDataPage() {
           </p>
         </div>
         <div className="heading-actions">
-          <Link href="/admin/users" className="outline-button">
+          <Link href="/manage/users" className="outline-button">
             Kembali ke daftar
           </Link>
         </div>

@@ -1,4 +1,4 @@
-import { BarChart3, FileSpreadsheet, LayoutDashboard, UserCog, Users, WalletCards } from 'lucide-react'
+import { BarChart3, FileSpreadsheet, LayoutDashboard, UserCog, WalletCards } from 'lucide-react'
 
 export const navItems = [
   { label: 'Overview', href: '/overview', icon: LayoutDashboard },
@@ -9,6 +9,5 @@ export const navItems = [
 
 /** Hanya ditampilkan untuk superuser (role ADMIN). */
 export const adminNavItems = [
-  { label: 'Pengguna', href: '/admin/users', icon: Users },
   { label: 'Manage', href: '/manage', icon: UserCog },
 ]

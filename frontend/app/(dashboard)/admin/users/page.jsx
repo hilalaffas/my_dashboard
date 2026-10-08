@@ -1,5 +1,6 @@
-import { AdminUsersPage } from '@/views/adminUsersPage'
+import { redirect } from 'next/navigation'
 
+// Daftar pengguna sekarang ada di menu Manage → Manage akun
 export default function Page() {
-  return <AdminUsersPage />
+  redirect('/manage/users')
 }
