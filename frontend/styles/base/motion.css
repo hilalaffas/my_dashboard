@@ -1,0 +1,286 @@
+/* Lapisan gerak untuk seluruh aplikasi: tombol, menu, popover, modal, toast, dan baris tabel.
+   Aturan: hanya transform dan opacity yang bergerak; warna boleh bertransisi.
+   Efek hover hanya untuk perangkat yang punya kursor (tidak "menempel" di layar sentuh),
+   dan semua gerak dimatikan bagi yang memilih mengurangi gerak. */
+
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 160ms;
+  --t-base: 260ms;
+}
+
+/* ---------- Transisi dasar (selalu aktif, hanya warna dan opacity) ---------- */
+.primary-button,
+.outline-button,
+.danger-button,
+.text-button,
+.icon-button,
+.more-button,
+.icon-action,
+.profile-button,
+.mobile-menu,
+.popover-item,
+.lg-btn,
+.lg-toggle {
+  transition:
+    transform var(--t-base) var(--ease-out),
+    background-color var(--t-fast) var(--ease-std),
+    border-color var(--t-fast) var(--ease-std),
+    color var(--t-fast) var(--ease-std),
+    opacity var(--t-fast) var(--ease-std);
+}
+
+.primary-button svg,
+.outline-button svg,
+.danger-button svg,
+.text-button svg,
+.icon-button svg,
+.icon-action svg,
+.side-nav svg {
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+/* Bayangan hover tombol utama lewat pseudo-element: hanya opacity yang beranimasi */
+.primary-button {
+  position: relative;
+  isolation: isolate;
+}
+
+.primary-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 10px 22px #4d765447;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-base) var(--ease-std);
+}
+
+/* ---------- Menu atas: pil muncul dan menyusut halus ---------- */
+.top-nav :is(button, a) {
+  position: relative;
+  isolation: isolate;
+  transition:
+    transform var(--t-base) var(--ease-out),
+    background-color var(--t-base) var(--ease-std),
+    color var(--t-fast) var(--ease-std);
+}
+
+.top-nav :is(button, a)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #eaf2e5;
+  opacity: 0;
+  transform: scale(0.82);
+  transition:
+    opacity var(--t-fast) var(--ease-std),
+    transform var(--t-base) var(--ease-out);
+}
+
+.top-nav :is(button, a):focus-visible,
+.side-nav :is(button, a):focus-visible,
+.mobile-nav :is(button, a):focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+}
+
+/* ---------- Sidebar: tanpa perubahan ketebalan huruf saat hover (menggeser tata letak) ---------- */
+.side-nav :is(button, a) {
+  transition:
+    transform var(--t-base) var(--ease-out),
+    background-color var(--t-fast) var(--ease-std),
+    color var(--t-fast) var(--ease-std);
+}
+
+.side-nav :is(button, a):not(.active):hover {
+  font-weight: 400;
+}
+
+.mobile-nav :is(button, a) {
+  transition: background-color var(--t-fast) var(--ease-std), color var(--t-fast) var(--ease-std);
+}
+
+/* ---------- Baris tabel ---------- */
+tbody tr {
+  transition: background-color var(--t-fast) var(--ease-std);
+}
+
+/* ---------- Popover, modal, toast: masuk dengan gerak ---------- */
+.popover {
+  transform-origin: top right;
+}
+
+.sidebar .popover {
+  transform-origin: bottom left;
+}
+
+@keyframes motion-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes motion-pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+}
+
+@keyframes motion-modal-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+}
+
+@keyframes motion-toast-in {
+  from { opacity: 0; transform: translateY(14px); }
+}
+
+/* ---------- Hanya perangkat dengan kursor: warna saat hover ---------- */
+@media (hover: hover) {
+  .outline-button:hover:not(:disabled) {
+    background: #f4f8f1;
+    border-color: #c3d3be;
+    color: #315336;
+  }
+
+  .primary-button:hover:not(:disabled) {
+    background: #43684a;
+    border-color: #43684a;
+  }
+
+  .primary-button:hover:not(:disabled)::after {
+    opacity: 1;
+  }
+
+  .danger-button:hover:not(:disabled) {
+    background: #ad4632;
+    border-color: #ad4632;
+  }
+
+  .text-button:hover:not(:disabled) {
+    color: #3f6b47;
+  }
+
+  .icon-button:hover:not(:disabled),
+  .more-button:hover:not(:disabled) {
+    color: #315336;
+  }
+
+  .profile-button:hover {
+    color: #223b27;
+  }
+
+  tbody tr:hover {
+    background: #f7faf5;
+  }
+
+  .top-nav :is(button, a):not(.active):hover {
+    color: #315336;
+  }
+
+  .top-nav :is(button, a):not(.active):hover::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .lg-btn-outline:hover:not(:disabled) {
+    border-color: #c3d3be;
+  }
+}
+
+/* ---------- Gerak: hover (kursor) dan tekan (semua perangkat), hanya bila gerak diizinkan ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .popover {
+    animation: motion-pop-in var(--t-base) var(--ease-out);
+  }
+
+  .modal-backdrop {
+    animation: motion-fade-in 0.2s var(--ease-std);
+  }
+
+  .modal {
+    animation: motion-modal-in 0.32s var(--ease-out);
+  }
+
+  .toast {
+    animation: motion-toast-in 0.34s var(--ease-out);
+  }
+
+  /* Tekan: tombol menyusut sedikit, cepat */
+  .primary-button:active:not(:disabled),
+  .outline-button:active:not(:disabled),
+  .danger-button:active:not(:disabled),
+  .lg-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 80ms;
+  }
+
+  .icon-button:active:not(:disabled),
+  .more-button:active:not(:disabled),
+  .icon-action:active:not(:disabled),
+  .mobile-menu:active {
+    transform: scale(0.88);
+    transition-duration: 80ms;
+  }
+
+  .top-nav :is(button, a):active,
+  .side-nav :is(button, a):active,
+  .popover-item:active,
+  .profile-button:active {
+    transform: scale(0.96);
+    transition-duration: 80ms;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .primary-button:hover:not(:disabled),
+  .outline-button:hover:not(:disabled),
+  .danger-button:hover:not(:disabled),
+  .lg-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  .primary-button:hover:not(:disabled) svg,
+  .outline-button:hover:not(:disabled) svg {
+    transform: scale(1.15);
+  }
+
+  .text-button:hover:not(:disabled) svg {
+    transform: translate(2px, -2px);
+  }
+
+  .icon-button:hover:not(:disabled),
+  .more-button:hover:not(:disabled),
+  .icon-action:hover:not(:disabled) {
+    transform: scale(1.12);
+  }
+
+  .modal-head .icon-button:hover {
+    transform: rotate(90deg) scale(1.1);
+  }
+
+  .icon-action.danger:hover svg {
+    transform: rotate(-8deg);
+  }
+
+  .top-nav :is(button, a):not(.active):hover {
+    transform: translateY(-1px);
+  }
+
+  .side-nav :is(button, a):hover svg {
+    transform: translateX(3px);
+  }
+
+  .popover-item:hover {
+    transform: translateX(3px);
+  }
+
+  .profile-button:hover .avatar {
+    transform: scale(1.1);
+  }
+
+  .profile-button .avatar {
+    transition: transform var(--t-base) var(--ease-out);
+  }
+}

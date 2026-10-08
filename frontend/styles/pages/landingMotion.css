@@ -1,38 +1,43 @@
-/* Landing page: semua animasi. Hanya transform, opacity, dan filter yang dianimasikan. */
+/* Landing page: semua animasi. Aturan emas: hanya transform dan opacity yang dianimasikan,
+   tanpa filter/blur pada elemen yang bergerak, dan tanpa mengubah variabel CSS di elemen akar. */
 
-/* ---------- Reveal saat scroll: fade + blur -> tajam. Kelas .is-visible ditambahkan oleh scrollEffects.tsx ---------- */
+/* ---------- Reveal saat scroll ----------
+   Memakai animation (bukan transition) agar setelah selesai elemen kembali ke gaya normal
+   dan efek hover kartu tidak ikut tertunda oleh --d. Kelas .is-visible diberi oleh scrollEffects.jsx. */
 [data-reveal] {
+  --rx: 0px;
+  --ry: 28px;
+  --rs: 1;
   opacity: 0;
-  filter: blur(14px);
-  transform: translate3d(0, 28px, 0);
-  transition:
-    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms),
-    filter 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms),
-    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms);
 }
 
-[data-reveal='fade'] { transform: none; }
-[data-reveal='left'] { transform: translate3d(-48px, 0, 0); }
-[data-reveal='right'] { transform: translate3d(48px, 0, 0); }
-[data-reveal='zoom'] { transform: scale(0.94); }
+[data-reveal='fade'] { --ry: 0px; }
+[data-reveal='left'] { --rx: -48px; --ry: 0px; }
+[data-reveal='right'] { --rx: 48px; --ry: 0px; }
+[data-reveal='zoom'] { --ry: 0px; --rs: 0.94; }
 
+/* Hero ada di layar saat dibuka: animasinya jalan lewat CSS saja agar judul (LCP) tidak menunggu JavaScript */
+.lp-hero [data-reveal],
 [data-reveal].is-visible {
   opacity: 1;
-  filter: blur(0);
-  transform: none;
+  animation: lp-reveal 0.8s var(--ease-out) var(--d, 0ms) backwards;
 }
 
-/* Kartu yang sudah tampil tetap bisa terangkat saat hover */
-.lp-card[data-reveal].is-visible:hover { transform: translateY(-6px); }
-
-/* ---------- Hero memudar dan blur saat di-scroll (--hero-p: 0 -> 1, diisi scrollEffects.tsx) ---------- */
-.lp-hero-inner {
-  opacity: calc(1 - var(--hero-p, 0) * 0.85);
-  filter: blur(calc(var(--hero-p, 0) * 10px));
-  transform: translate3d(0, calc(var(--hero-p, 0) * -48px), 0);
+@keyframes lp-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--rx), var(--ry), 0) scale(var(--rs));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* ---------- Bilah progres halaman (--page-p: 0 -> 1) ---------- */
+/* ---------- Hero memudar saat di-scroll ---------- */
+.lp-hero-inner { will-change: transform, opacity; }
+
+/* ---------- Bilah progres halaman ---------- */
 .lp-progress {
   position: fixed;
   inset: 0 0 auto 0;
@@ -40,14 +45,37 @@
   height: 3px;
   background: linear-gradient(90deg, #7fb36e, #e0a458);
   transform-origin: left;
-  transform: scaleX(var(--page-p, 0));
+  transform: scaleX(0);
+}
+
+/* Browser modern: dihitung di compositor oleh CSS scroll-driven animation, tanpa JavaScript.
+   Browser lama memakai cadangan di scrollEffects.jsx. */
+@supports (animation-timeline: scroll()) {
+  .lp-progress {
+    animation: lp-progress linear both;
+    animation-timeline: scroll(root block);
+  }
+
+  .lp-hero-inner {
+    animation: lp-hero-out linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 70svh;
+  }
+
+  @keyframes lp-progress {
+    to { transform: scaleX(1); }
+  }
+
+  @keyframes lp-hero-out {
+    to { opacity: 0.15; transform: translate3d(0, -48px, 0); }
+  }
 }
 
 /* ---------- Grafik contoh di hero tumbuh saat terlihat ---------- */
 .lp-bar {
   transform-origin: bottom;
   transform: scaleY(0);
-  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i, 0) * 90ms + 450ms);
+  transition: transform 0.9s var(--ease-out) calc(var(--i, 0) * 90ms + 450ms);
 }
 
 .is-visible .lp-bar { transform: scaleY(1); }
@@ -85,19 +113,63 @@
   animation: lp-ring 2.4s ease-out infinite;
 }
 
+/* Bagian di luar layar tidak perlu menganimasikan apa pun (kelas .is-in-view diatur scrollEffects.jsx) */
+.lp-section:not(.is-in-view) :is(.lp-orb, .lp-chip, .lp-glow),
+.lp-section:not(.is-in-view) .lp-btn-large::after {
+  animation-play-state: paused;
+}
+
+/* ---------- Tautan navigasi: garis bawah meluncur ---------- */
+.lp-nav a::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--ease-out);
+}
+
+.lp-nav a:hover::after,
+.lp-nav a:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ---------- FAQ: isi membuka dengan halus (peningkatan progresif, browser lain tetap berfungsi) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (interpolate-size: allow-keywords) {
+    .lp-faq-item {
+      interpolate-size: allow-keywords;
+    }
+
+    .lp-faq-item::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition: block-size 0.35s var(--ease-out), content-visibility 0.35s allow-discrete;
+    }
+
+    .lp-faq-item[open]::details-content {
+      block-size: auto;
+    }
+  }
+}
+
 /* ---------- Pengguna yang memilih mengurangi gerak: semua langsung tampil tanpa animasi ---------- */
 @media (prefers-reduced-motion: reduce) {
   [data-reveal],
+  .lp-hero [data-reveal],
   [data-reveal].is-visible {
     opacity: 1;
-    filter: none;
-    transform: none;
-    transition: none;
+    animation: none;
   }
 
-  .lp-hero-inner { opacity: 1; filter: none; transform: none; }
+  .lp-hero-inner { animation: none; will-change: auto; }
   .lp-bar { transform: none; transition: none; }
   .lp-progress { display: none; }
   .lp-orb, .lp-chip, .lp-glow, .lp-btn-large::after { animation: none; }
-  .lp-btn, .lp-card { transition: none; }
+  .lp-btn, .lp-card, .lp-nav a::after { transition: none; }
 }
