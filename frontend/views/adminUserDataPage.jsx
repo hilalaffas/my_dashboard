@@ -6,6 +6,7 @@ import { ReadOnlyAccountTree } from '@/components/admin/readOnlyAccountTree'
 import { ReadOnlyEstimateTable } from '@/components/admin/readOnlyEstimateTable'
 import { useToast } from '@/components/common/toastProvider'
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard'
+import { buildCostLines } from '@/lib/costLines'
 import { adminApi } from '@/services/adminService'
 
 export function AdminUserDataPage() {
@@ -66,10 +67,10 @@ export function AdminUserDataPage() {
             <div className="panel-heading">
               <div>
                 <h2>Cost estimates</h2>
-                <p>Debit, kredit, dan saldo</p>
+                <p>Item Accounts dan estimasi manual: debit, kredit, dan saldo</p>
               </div>
             </div>
-            <ReadOnlyEstimateTable rows={data.rows} />
+            <ReadOnlyEstimateTable rows={buildCostLines(data.tree, data.rows)} />
           </section>
         </>
       )}

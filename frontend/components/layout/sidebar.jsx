@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useAuth } from '@/components/auth/authProvider'
 import { Modal } from '@/components/common/modal'
 import { Popover } from '@/components/common/popover'
-import { adminNavItem, navItems } from '@/data/navigation'
+import { adminNavItems, navItems } from '@/data/navigation'
 import { initials } from '@/lib/initials'
 import { resetAppData } from '@/lib/resetAppData'
 export function Sidebar() {
@@ -15,7 +15,7 @@ export function Sidebar() {
   const { authEnabled, user, logout } = useAuth()
   const [dialog, setDialog] = useState(null)
   const displayName = user?.fullName ?? 'User Testing'
-  const items = user?.role === 'ADMIN' ? [...navItems, adminNavItem] : navItems
+  const items = user?.role === 'ADMIN' ? [...navItems, ...adminNavItems] : navItems
   async function handleLogout() {
     await logout()
     router.replace('/login')
@@ -27,9 +27,9 @@ export function Sidebar() {
         <span>costly</span>
       </div>
       <div className="workspace">
-        <div className="avatar">UT</div>
+        <div className="avatar">{initials(displayName)}</div>
         <div>
-          <b>User Testing&apos;s workspace</b>
+          <b>{displayName}&apos;s workspace</b>
           <small>Personal finance</small>
         </div>
         <ChevronDown size={15} />
@@ -87,6 +87,11 @@ export function Sidebar() {
                 >
                   Pengaturan data
                 </button>
+                {authEnabled && user?.role === 'ADMIN' && (
+                  <Link href="/manage/profile" className="popover-item" onClick={close}>
+                    Edit profil
+                  </Link>
+                )}
                 {authEnabled && (
                   <button
                     className="popover-item"

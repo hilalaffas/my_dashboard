@@ -39,10 +39,10 @@ export function ReportsPage() {
         </div>
       </div>
       <div className="metrics-grid">
-        <MetricCard icon={Receipt} label="Total nominal" value={formatRp(total)} change="—" />
-        <MetricCard icon={WalletCards} label="Kategori" value={`${tree.length}`} change="—" />
-        <MetricCard icon={Layers} label="Sub kategori" value={`${subCount}`} change="—" />
-        <MetricCard icon={ListTree} label="Item" value={`${itemCount}`} change="—" />
+        <MetricCard icon={Receipt} label="Total nominal" value={formatRp(total)} />
+        <MetricCard icon={WalletCards} label="Kategori" value={`${tree.length}`} />
+        <MetricCard icon={Layers} label="Sub kategori" value={`${subCount}`} />
+        <MetricCard icon={ListTree} label="Item" value={`${itemCount}`} />
       </div>
       <section className="panel">
         <div className="panel-heading">

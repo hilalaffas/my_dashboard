@@ -10,28 +10,44 @@ import {
   Trash2,
   WalletCards,
 } from 'lucide-react'
-import { useState } from 'react'
+import Link from 'next/link'
+import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/common/confirmDialog'
 import { MetricCard } from '@/components/common/metricCard'
 import { PageFooter } from '@/components/common/pageFooter'
 import { useToast } from '@/components/common/toastProvider'
 import { EstimateFormModal } from '@/components/estimates/estimateFormModal'
+import { useAccounts } from '@/hooks/useAccounts'
 import { useEstimates } from '@/hooks/useEstimates'
+import { buildCostLines, totalsOf } from '@/lib/costLines'
 import { exportCsv } from '@/lib/exportCsv'
 import { formatRp } from '@/lib/formatters'
+
 export function CostEstimatesPage() {
   const notify = useToast()
-  const { rows, actions } = useEstimates(notify)
+  const { tree, ready: accountsReady } = useAccounts(notify)
+  const { rows: manualRows, actions, ready: estimatesReady } = useEstimates(notify)
   const [dialog, setDialog] = useState(null)
-  const totalDebit = rows.reduce((sum, r) => sum + r.debit, 0)
-  const totalCredit = rows.reduce((sum, r) => sum + r.credit, 0)
+
+  const lines = useMemo(() => buildCostLines(tree, manualRows), [tree, manualRows])
+  const { debit: totalDebit, credit: totalCredit, balance } = totalsOf(lines)
+  const ready = accountsReady && estimatesReady
+
   function handleExport() {
     exportCsv('cost-estimates.csv', [
-      ['Type', 'Detail', 'Debit', 'Credit', 'Balance'],
-      ...rows.map((r) => [r.type, r.detail, r.debit, r.credit, r.credit - r.debit]),
+      ['Type', 'Detail', 'Sumber', 'Debit', 'Credit', 'Balance'],
+      ...lines.map((l) => [
+        l.type,
+        l.detail,
+        l.source === 'account' ? `Accounts › ${l.group}` : 'Manual',
+        l.debit,
+        l.credit,
+        l.credit - l.debit,
+      ]),
     ])
     notify('File CSV diunduh.')
   }
+
   return (
     <div className="cost-detail-page">
       <div className="page-heading">
@@ -40,7 +56,7 @@ export function CostEstimatesPage() {
             <span className="status-dot" /> Cost estimates
           </div>
           <h1>Rincian anggaran biaya</h1>
-          <p>Detail debit, kredit, dan saldo dari cost estimate bulanan Anda.</p>
+          <p>Item dari Accounts tampil otomatis di sini. Gunakan New estimate untuk pemasukan atau biaya di luar Accounts.</p>
         </div>
         <div className="heading-actions">
           <button className="outline-button" onClick={handleExport}>
@@ -51,23 +67,14 @@ export function CostEstimatesPage() {
           </button>
         </div>
       </div>
+
       <div className="metrics-grid cost-metrics">
-        <MetricCard icon={CircleDollarSign} label="Total debit" value={formatRp(totalDebit)} change="3.2%" />
-        <MetricCard
-          icon={WalletCards}
-          label="Total credit"
-          value={formatRp(totalCredit)}
-          change="1.8%"
-          tone="orange"
-        />
-        <MetricCard
-          icon={Receipt}
-          label="Net estimate"
-          value={formatRp(totalCredit - totalDebit)}
-          change="4.6%"
-        />
-        <MetricCard icon={Target} label="Line items" value={`${rows.length}`} change="12.5%" />
+        <MetricCard icon={CircleDollarSign} label="Total debit" value={formatRp(totalDebit)} />
+        <MetricCard icon={WalletCards} label="Total credit" value={formatRp(totalCredit)} tone="orange" />
+        <MetricCard icon={Receipt} label="Net estimate" value={formatRp(balance)} />
+        <MetricCard icon={Target} label="Line items" value={`${lines.length}`} />
       </div>
+
       <section className="panel detail-table-panel">
         <div className="panel-heading">
           <div>
@@ -91,41 +98,60 @@ export function CostEstimatesPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
+              {lines.map((line) => (
+                <tr key={line.id}>
                   <td>
-                    <span className="estimate-type">{row.type}</span>
+                    <span className="estimate-type">{line.type}</span>
                   </td>
                   <td>
-                    <b>{row.detail}</b>
+                    <b>{line.detail}</b>
+                    <small className="line-source">
+                      {line.source === 'account' ? `Accounts › ${line.group}` : 'Manual'}
+                    </small>
                   </td>
-                  <td className="numeric debit-cell">{row.debit ? formatRp(row.debit) : '—'}</td>
-                  <td className="numeric credit-cell">{row.credit ? formatRp(row.credit) : '—'}</td>
-                  <td className="numeric balance-cell">{formatRp(row.credit - row.debit)}</td>
+                  <td className="numeric debit-cell">{line.debit ? formatRp(line.debit) : '—'}</td>
+                  <td className="numeric credit-cell">{line.credit ? formatRp(line.credit) : '—'}</td>
+                  <td className="numeric balance-cell">{formatRp(line.credit - line.debit)}</td>
                   <td className="numeric">
-                    <div className="row-actions">
-                      <button
-                        className="icon-action"
-                        aria-label={`Ubah ${row.detail}`}
-                        onClick={() => setDialog({ kind: 'edit', row })}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        className="icon-action danger"
-                        aria-label={`Hapus ${row.detail}`}
-                        onClick={() => setDialog({ kind: 'delete', row })}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                    {line.source === 'account' ? (
+                      <Link href="/accounts" className="inline-link" aria-label={`Atur ${line.detail} di Accounts`}>
+                        Atur di Accounts
+                      </Link>
+                    ) : (
+                      <div className="row-actions">
+                        <button
+                          className="icon-action"
+                          aria-label={`Ubah ${line.detail}`}
+                          onClick={() => setDialog({ kind: 'edit', row: line })}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          className="icon-action danger"
+                          aria-label={`Hapus ${line.detail}`}
+                          onClick={() => setDialog({ kind: 'delete', row: line })}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {lines.length === 0 && (
                 <tr>
                   <td colSpan={6} className="empty-cell">
-                    Belum ada estimasi. Klik “New estimate” untuk menambah.
+                    {ready ? (
+                      <>
+                        Belum ada data. Tambahkan item di{' '}
+                        <Link href="/accounts" className="inline-link">
+                          Accounts
+                        </Link>{' '}
+                        atau klik “New estimate”.
+                      </>
+                    ) : (
+                      'Memuat…'
+                    )}
                   </td>
                 </tr>
               )}
@@ -135,7 +161,7 @@ export function CostEstimatesPage() {
                 <th colSpan={2}>TOTAL</th>
                 <th className="numeric">{formatRp(totalDebit)}</th>
                 <th className="numeric">{formatRp(totalCredit)}</th>
-                <th className="numeric">{formatRp(totalCredit - totalDebit)}</th>
+                <th className="numeric">{formatRp(balance)}</th>
                 <th />
               </tr>
             </tfoot>

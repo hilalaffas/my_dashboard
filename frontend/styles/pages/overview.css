@@ -206,3 +206,26 @@
     height: 132px;
   }
 }
+
+/* Grafik satu batang per type (Cost by type). */
+.bar-chart.single .bar-group {
+  width: 15%;
+  min-width: 0;
+}
+
+.bar-chart.single .bar {
+  width: 22px;
+}
+
+.bar-chart.single .bar-group small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .bar-chart.single .bar {
+    width: 16px;
+  }
+}

@@ -1,0 +1,152 @@
+/* Menu Manage (superuser): tab, halaman edit profil, dan form buat akun. */
+
+.mg-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.mg-tabs a {
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mg-tabs a:hover {
+  color: var(--foreground);
+}
+
+.mg-tabs a.active {
+  border-bottom-color: var(--green);
+  color: var(--green);
+}
+
+.mg-tabs a:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+}
+
+.mg-narrow {
+  max-width: 560px;
+}
+
+.mg-form {
+  margin-top: 18px;
+}
+
+.mg-password input {
+  padding-right: 76px;
+}
+
+.mg-success {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--soft-green);
+  color: var(--green);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Halaman edit profil: kartu identitas di kiri, form dan keamanan di kanan. */
+
+.pf-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.pf-identity {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.pf-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background: #263c2c;
+  color: #d9ebd7;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.pf-name {
+  margin: 0;
+  max-width: 100%;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
+}
+
+.pf-username {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pf-badge {
+  margin-top: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--soft-green);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pf-main {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.pf-form {
+  margin-top: 18px;
+}
+
+.pf-form input[readonly] {
+  background: #f4f6f2;
+  color: var(--muted);
+  cursor: default;
+}
+
+.pf-help {
+  margin: 0;
+  color: #8a938c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.pf-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .pf-layout {
+    grid-template-columns: 1fr;
+  }
+}

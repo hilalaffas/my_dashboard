@@ -9,9 +9,11 @@ export function MetricCard({ icon: Icon, label, value, change, tone = 'green' })
         </span>
       </div>
       <strong>{value}</strong>
-      <span className={`change ${tone}`}>
-        <ArrowUpRight size={13} /> {change} <em>vs last month</em>
-      </span>
+      {change && (
+        <span className={`change ${tone}`}>
+          <ArrowUpRight size={13} /> {change} <em>vs last month</em>
+        </span>
+      )}
     </article>
   )
 }

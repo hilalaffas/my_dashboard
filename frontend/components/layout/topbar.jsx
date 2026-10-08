@@ -7,7 +7,7 @@ import { useAuth } from '@/components/auth/authProvider'
 import { ChangePasswordModal } from '@/components/auth/changePasswordModal'
 import { Popover } from '@/components/common/popover'
 import { useToast } from '@/components/common/toastProvider'
-import { adminNavItem, navItems } from '@/data/navigation'
+import { adminNavItems, navItems } from '@/data/navigation'
 import { initials } from '@/lib/initials'
 import { resetAppData } from '@/lib/resetAppData'
 const notifications = [
@@ -22,7 +22,7 @@ export function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
   const displayName = user?.fullName ?? 'User Testing'
-  const items = user?.role === 'ADMIN' ? [...navItems, adminNavItem] : navItems
+  const items = user?.role === 'ADMIN' ? [...navItems, ...adminNavItems] : navItems
   const isActive = (href) => (pathname.startsWith(href) ? 'active' : '')
   async function handleLogout() {
     await logout()
@@ -94,6 +94,11 @@ export function Topbar() {
               </Link>
               {authEnabled ? (
                 <>
+                  {user?.role === 'ADMIN' && (
+                    <Link href="/manage/profile" className="popover-item" onClick={close}>
+                      Edit profil
+                    </Link>
+                  )}
                   <button
                     className="popover-item"
                     onClick={() => {

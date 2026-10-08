@@ -96,3 +96,12 @@
     padding-right: 10px;
   }
 }
+
+/* Asal baris: item Accounts (otomatis) atau estimasi manual. */
+.estimate-table .line-source {
+  display: block;
+  margin-top: 3px;
+  color: #8a938c;
+  font-size: 11px;
+  font-weight: 400;
+}

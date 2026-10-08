@@ -1,6 +1,5 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import { defaultAccounts } from '@/data/mockData'
 import * as treeOps from '@/lib/accountsTree'
 import { accountsApi, isApiEnabled } from '@/services/accountsService'
 import { useStoredState } from './useStoredState'
@@ -10,7 +9,7 @@ import { useStoredState } from './useStoredState'
  * Semua aksi mengembalikan true jika berhasil.
  */
 export function useAccounts(onError) {
-  const [localTree, setLocalTree, localReady] = useStoredState('sims.accounts', defaultAccounts)
+  const [localTree, setLocalTree, localReady] = useStoredState('sims.accounts', [])
   const [remoteTree, setRemoteTree] = useState([])
   const [remoteReady, setRemoteReady] = useState(false)
   const reload = useCallback(async () => {

@@ -1,5 +1,6 @@
 'use client'
 import {
+  ArrowUpRight,
   CircleDollarSign,
   Download,
   FileSpreadsheet,
@@ -8,7 +9,6 @@ import {
   Receipt,
   TrendingUp,
   WalletCards,
-  ArrowUpRight,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
@@ -17,24 +17,76 @@ import { MetricCard } from '@/components/common/metricCard'
 import { PageFooter } from '@/components/common/pageFooter'
 import { useToast } from '@/components/common/toastProvider'
 import { EstimateFormModal } from '@/components/estimates/estimateFormModal'
-import { categoryData, monthlyData, transactions } from '@/data/mockData'
+import { useAccounts } from '@/hooks/useAccounts'
 import { useEstimates } from '@/hooks/useEstimates'
+import { buildCostLines, debitByType, totalsOf } from '@/lib/costLines'
 import { exportCsv } from '@/lib/exportCsv'
+import { formatCompactRp, formatRp } from '@/lib/formatters'
+
+const SLICE_COLORS = ['#8fbf80', '#c8ddbd', '#e6c98d', '#df9f83', '#c9cdc7']
+const TOP_SLICES = 4
+const BAR_COUNT = 6
+const TOP_ROWS = 4
+
+/** Gradien donut dari irisan {amount}; cincin kosong bila belum ada pengeluaran. */
+function donutBackground(slices, total) {
+  if (total <= 0) return '#eef1ec'
+  let start = 0
+  const stops = slices.map((slice, i) => {
+    const end = start + (slice.amount / total) * 100
+    const stop = `${SLICE_COLORS[i]} ${start}% ${end}%`
+    start = end
+    return stop
+  })
+  return `conic-gradient(${stops.join(', ')})`
+}
+
 export function OverviewPage() {
   const notify = useToast()
   const { user } = useAuth()
-  const { rows, actions } = useEstimates(notify)
-  const [range, setRange] = useState('This month')
+  const { tree } = useAccounts(notify)
+  const { rows: manualRows, actions } = useEstimates(notify)
   const [showAll, setShowAll] = useState(false)
   const [creating, setCreating] = useState(false)
-  const displayed = useMemo(() => (showAll ? transactions : transactions.slice(0, 4)), [showAll])
+
+  // Angka Overview dihitung dari baris yang sama dengan halaman Cost estimates
+  const lines = useMemo(() => buildCostLines(tree, manualRows), [tree, manualRows])
+  const { debit, credit, balance } = totalsOf(lines)
+  const spendingRatio = credit > 0 ? (debit / credit) * 100 : null
+
+  const byType = useMemo(() => debitByType(lines), [lines])
+  const bars = byType.slice(0, BAR_COUNT)
+  const maxBar = bars[0]?.amount ?? 0
+  const slices = useMemo(() => {
+    const top = byType.slice(0, TOP_SLICES)
+    const rest = byType.slice(TOP_SLICES).reduce((sum, t) => sum + t.amount, 0)
+    return rest > 0 ? [...top, { name: 'Lainnya', amount: rest }] : top
+  }, [byType])
+
+  const largest = useMemo(
+    () =>
+      lines
+        .map((l) => ({ ...l, net: l.credit - l.debit }))
+        .filter((l) => l.net !== 0)
+        .sort((a, b) => Math.abs(b.net) - Math.abs(a.net)),
+    [lines],
+  )
+  const displayed = showAll ? largest : largest.slice(0, TOP_ROWS)
+
   function handleExport() {
     exportCsv('cost-estimates.csv', [
-      ['Type', 'Detail', 'Debit', 'Credit'],
-      ...rows.map((r) => [r.type, r.detail, r.debit, r.credit]),
+      ['Type', 'Detail', 'Sumber', 'Debit', 'Credit'],
+      ...lines.map((l) => [
+        l.type,
+        l.detail,
+        l.source === 'account' ? `Accounts › ${l.group}` : 'Manual',
+        l.debit,
+        l.credit,
+      ]),
     ])
     notify('Laporan CSV diunduh.')
   }
+
   return (
     <>
       <div className="page-heading">
@@ -56,85 +108,90 @@ export function OverviewPage() {
       </div>
 
       <div className="metrics-grid">
-        <MetricCard icon={CircleDollarSign} label="Total planned cost" value="Rp 6.75 jt" change="1.4%" />
-        <MetricCard icon={Receipt} label="Total spent" value="Rp 6.80 jt" change="2.7%" tone="orange" />
-        <MetricCard icon={WalletCards} label="Available balance" value="Rp 95 rb" change="8.4%" />
-        <MetricCard icon={TrendingUp} label="Saving rate" value="43.4%" change="4.2%" />
+        <MetricCard icon={CircleDollarSign} label="Total planned cost" value={formatRp(debit)} />
+        <MetricCard icon={Receipt} label="Total income" value={formatRp(credit)} tone="orange" />
+        <MetricCard
+          icon={WalletCards}
+          label="Available balance"
+          value={formatRp(balance)}
+          tone={balance < 0 ? 'orange' : 'green'}
+        />
+        <MetricCard
+          icon={TrendingUp}
+          label="Spending ratio"
+          value={spendingRatio === null ? '—' : `${spendingRatio.toFixed(1)}%`}
+        />
       </div>
 
       <div className="main-grid">
         <section className="panel trend-panel">
           <div className="panel-heading">
             <div>
-              <h2>Monthly cost overview</h2>
-              <p>Track planned costs against actual spending</p>
+              <h2>Cost by type</h2>
+              <p>Largest planned costs, taken from your Accounts and estimates</p>
             </div>
-            <select
-              value={range}
-              onChange={(e) => setRange(e.target.value)}
-              aria-label="Pilih rentang tanggal"
-            >
-              <option>This month</option>
-              <option>Last 6 months</option>
-              <option>This year</option>
-            </select>
           </div>
           <div className="chart-legend">
             <span>
               <i className="legend-dot planned" /> Planned
             </span>
-            <span>
-              <i className="legend-dot actual" /> Actual
-            </span>
             <b>
-              {range === 'This month' ? 'Rp 6.80 jt' : 'Rp 39.91 jt'} <small>total actual</small>
+              {formatRp(debit)} <small>total planned</small>
             </b>
           </div>
-          <div className="bar-chart">
-            {monthlyData.map((item, index) => (
-              <div className="bar-group" key={item.month}>
-                <div className="bars">
-                  <span className="bar planned-bar" style={{ height: `${item.value * 8}%` }} />
-                  <span
-                    className="bar actual-bar"
-                    style={{
-                      height: `${(item.value + (index === 3 ? 0.08 : index === 4 ? 0.03 : -0.05)) * 8}%`,
-                    }}
-                  />
+          {bars.length > 0 ? (
+            <div className="bar-chart single">
+              {bars.map((item) => (
+                <div className="bar-group" key={item.name} title={`${item.name}: ${formatRp(item.amount)}`}>
+                  <div className="bars">
+                    <span
+                      className="bar planned-bar"
+                      style={{ height: `${Math.max(6, (item.amount / maxBar) * 88)}%` }}
+                    />
+                  </div>
+                  <small>{item.name}</small>
                 </div>
-                <small>{item.month}</small>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-cell">
+              Belum ada biaya. Tambahkan item di{' '}
+              <Link href="/accounts" className="inline-link">
+                Accounts
+              </Link>
+              .
+            </p>
+          )}
         </section>
+
         <section className="panel category-panel">
           <div className="panel-heading">
             <div>
               <h2>Top cost estimates</h2>
-              <p>Largest items in your plan</p>
+              <p>Largest types in your plan</p>
             </div>
             <Link href="/reports" className="more-button" aria-label="Lihat laporan kategori">
               <MoreHorizontal size={19} />
             </Link>
           </div>
           <div className="donut-wrap">
-            <div className="donut">
+            <div className="donut" style={{ background: donutBackground(slices, debit) }}>
               <div>
-                <strong>Rp 6.75</strong>
-                <span>million total</span>
+                <strong>{formatCompactRp(debit)}</strong>
+                <span>total cost</span>
               </div>
             </div>
           </div>
           <div className="category-list">
-            {categoryData.map((item) => (
+            {slices.map((item, i) => (
               <div className="category-row" key={item.name}>
                 <span>
-                  <i style={{ background: item.color }} />
+                  <i style={{ background: SLICE_COLORS[i] }} />
                   {item.name}
                 </span>
                 <b>
-                  {item.amount}
-                  <small>{item.value}%</small>
+                  {formatCompactRp(item.amount)}
+                  <small>{Math.round((item.amount / debit) * 100)}%</small>
                 </b>
               </div>
             ))}
@@ -145,12 +202,14 @@ export function OverviewPage() {
       <section className="panel table-panel">
         <div className="panel-heading">
           <div>
-            <h2>Recent cost estimates</h2>
-            <p>Your latest planned and actual entries</p>
+            <h2>Largest cost items</h2>
+            <p>Biggest lines across Accounts and manual estimates</p>
           </div>
-          <button className="text-button" onClick={() => setShowAll(!showAll)}>
-            {showAll ? 'Show less' : 'View all'} <ArrowUpRight size={15} />
-          </button>
+          {largest.length > TOP_ROWS && (
+            <button className="text-button" onClick={() => setShowAll(!showAll)}>
+              {showAll ? 'Show less' : 'View all'} <ArrowUpRight size={15} />
+            </button>
+          )}
         </div>
         <div className="table-wrap">
           <table>
@@ -158,14 +217,13 @@ export function OverviewPage() {
               <tr>
                 <th>DETAIL</th>
                 <th>CATEGORY</th>
-                <th>DATE</th>
                 <th>AMOUNT</th>
                 <th>STATUS</th>
               </tr>
             </thead>
             <tbody>
               {displayed.map((row) => (
-                <tr key={row.detail}>
+                <tr key={row.id}>
                   <td>
                     <div className="table-detail">
                       <span className="row-icon">
@@ -178,19 +236,25 @@ export function OverviewPage() {
                     </div>
                   </td>
                   <td>
-                    <span className="category-pill">{row.category}</span>
+                    <span className="category-pill">{row.group}</span>
                   </td>
-                  <td>{row.date}</td>
-                  <td className={row.positive ? 'positive amount' : 'amount'}>
-                    {row.positive ? '+' : '-'} {row.value}
+                  <td className={row.net > 0 ? 'positive amount' : 'amount'}>
+                    {row.net > 0 ? '+' : '-'} {formatRp(Math.abs(row.net))}
                   </td>
                   <td>
-                    <span className={`status ${row.positive ? 'received' : 'planned'}`}>
-                      {row.positive ? 'Received' : 'Planned'}
+                    <span className={`status ${row.net > 0 ? 'received' : 'planned'}`}>
+                      {row.net > 0 ? 'Received' : 'Planned'}
                     </span>
                   </td>
                 </tr>
               ))}
+              {displayed.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="empty-cell">
+                    Belum ada data.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

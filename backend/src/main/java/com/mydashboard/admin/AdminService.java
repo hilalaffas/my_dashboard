@@ -4,6 +4,7 @@ import static com.mydashboard.admin.AdminDtos.*;
 
 import com.mydashboard.account.AccountDtos.CategoryResponse;
 import com.mydashboard.account.AccountService;
+import com.mydashboard.common.exception.BadRequestException;
 import com.mydashboard.common.exception.ForbiddenException;
 import com.mydashboard.common.exception.NotFoundException;
 import com.mydashboard.costestimate.CostEstimateDtos.CostEstimateResponse;
@@ -12,14 +13,17 @@ import com.mydashboard.user.Role;
 import com.mydashboard.user.User;
 import com.mydashboard.user.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
- * Akses baca untuk superuser (role ADMIN) ke data semua pengguna.
- * Sengaja hanya BACA: superuser tidak bisa mengubah data milik pengguna lain.
+ * Akses superuser (role ADMIN): membaca data semua pengguna dan membuat akun baru.
+ * Data milik pengguna lain sengaja hanya bisa DIBACA: superuser tidak bisa mengubahnya.
  * Peran diperiksa ulang ke database pada setiap panggilan (bukan hanya dari token).
  */
 @Service
@@ -29,6 +33,7 @@ public class AdminService {
     private final UserRepository users;
     private final AccountService accounts;
     private final CostEstimateService estimates;
+    private final PasswordEncoder encoder;
 
     public List<AdminUserResponse> listUsers(UUID adminId) {
         assertSuperuser(adminId);
@@ -38,6 +43,26 @@ public class AdminService {
     public AdminUserResponse getUser(UUID adminId, UUID userId) {
         assertSuperuser(adminId);
         return AdminUserResponse.from(requireUser(userId));
+    }
+
+    /** Membuat akun pengguna biasa (role USER) yang langsung aktif; tidak perlu verifikasi email. */
+    public AdminUserResponse createUser(UUID adminId, CreateUserRequest req) {
+        assertSuperuser(adminId);
+        String username = req.username().trim().toLowerCase(Locale.ROOT);
+        if (users.findByUsername(username).isPresent()) throw new BadRequestException("Username sudah dipakai.");
+
+        User user = new User();
+        user.setUsername(username);
+        user.setPasswordHash(encoder.encode(req.password()));
+        user.setFullName(username);
+        user.setRole(Role.USER);
+        user.setEnabled(true);
+        try {
+            return AdminUserResponse.from(users.saveAndFlush(user));
+        } catch (DataIntegrityViolationException e) {
+            // Dua permintaan dengan username sama pada saat bersamaan: batas unik di database yang menang
+            throw new BadRequestException("Username sudah dipakai.");
+        }
     }
 
     public List<CategoryResponse> accountsOf(UUID adminId, UUID userId) {

@@ -5,13 +5,15 @@ import static com.mydashboard.admin.AdminDtos.*;
 import com.mydashboard.account.AccountDtos.CategoryResponse;
 import com.mydashboard.auth.AuthUser;
 import com.mydashboard.costestimate.CostEstimateDtos.CostEstimateResponse;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-/** Khusus superuser (ADMIN). Hanya membaca data pengguna lain. */
+/** Khusus superuser (ADMIN). Membaca data pengguna lain dan membuat akun baru. */
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -22,6 +24,12 @@ public class AdminController {
     @GetMapping
     public List<AdminUserResponse> users(@AuthenticationPrincipal AuthUser me) {
         return service.listUsers(me.id());
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public AdminUserResponse create(@AuthenticationPrincipal AuthUser me, @Valid @RequestBody CreateUserRequest req) {
+        return service.createUser(me.id(), req);
     }
 
     @GetMapping("/{userId}")
