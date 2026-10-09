@@ -3,7 +3,7 @@
  * + estimasi manual (pemasukan atau biaya di luar Accounts).
  * Overview dan Cost memakai baris yang sama supaya angkanya selalu cocok.
  */
-export function buildCostLines(tree, manualRows) {
+export function buildCostLines(tree, manualRows, budgetOf = (_id, amount) => ({ amount })) {
   const fromAccounts = tree.flatMap((category) =>
     category.subs.flatMap((sub) =>
       sub.items.map((item) => ({
@@ -12,7 +12,7 @@ export function buildCostLines(tree, manualRows) {
         type: sub.name,
         detail: item.name,
         group: category.name,
-        debit: item.amount,
+        debit: budgetOf(item.id, item.amount).amount,
         credit: 0,
       })),
     ),

@@ -2,22 +2,29 @@
 import { ChevronsDownUp, ChevronsUpDown, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { AccountFormModal } from '@/components/accounts/accountFormModal'
+import { AccountsTabs } from '@/components/accounts/accountsTabs'
 import { CategoryCard } from '@/components/accounts/categoryCard'
+import { RuleModal } from '@/components/budget/ruleModal'
 import { ConfirmDialog } from '@/components/common/confirmDialog'
 import { useToast } from '@/components/common/toastProvider'
 import { useAccounts } from '@/hooks/useAccounts'
+import { useMonthBudget } from '@/hooks/useMonthBudget'
+import { applyBudget } from '@/lib/budgetCalendar'
 const levelLabel = { category: 'Kategori', sub: 'Sub kategori', item: 'Item' }
 export function AccountsPage() {
   const notify = useToast()
   const { tree: data, actions, ready } = useAccounts(notify)
+  const { budgetOf, rules, rulesSupported, ruleActions, days, monthLabel } = useMonthBudget(notify)
+  // Nominal item mengikuti aturan hitung dan kalender bulan berjalan; nominal asli ada di rawAmount
+  const tree = useMemo(() => applyBudget(data, budgetOf), [data, budgetOf])
   const [dialog, setDialog] = useState(null)
   const [collapsed, setCollapsed] = useState(new Set())
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return data
+    if (!q) return tree
     const has = (text) => text.toLowerCase().includes(q)
-    return data.flatMap((c) => {
+    return tree.flatMap((c) => {
       if (has(c.name)) return [c]
       const subs = c.subs.flatMap((s) =>
         has(s.name)
@@ -26,7 +33,7 @@ export function AccountsPage() {
       )
       return subs.length ? [{ ...c, subs }] : []
     })
-  }, [data, query])
+  }, [tree, query])
   function toggle(id) {
     setCollapsed((prev) => {
       const next = new Set(prev)
@@ -103,6 +110,8 @@ export function AccountsPage() {
         </div>
       </div>
 
+      <AccountsTabs />
+
       <label className="search-box">
         <Search size={16} />
         <input
@@ -129,6 +138,7 @@ export function AccountsPage() {
             open={Boolean(query) || !collapsed.has(c.id)}
             onToggle={() => toggle(c.id)}
             onRequest={setDialog}
+            canRule={rulesSupported}
           />
         ))}
       </div>
@@ -141,6 +151,31 @@ export function AccountsPage() {
           initial={dialog.initial}
           onClose={() => setDialog(null)}
           onSubmit={(v) => handleSubmit(dialog, v)}
+        />
+      )}
+      {dialog?.kind === 'rule' && (
+        <RuleModal
+          item={dialog}
+          rule={rules.get(dialog.itemId)}
+          days={days}
+          monthLabel={monthLabel}
+          onClose={() => setDialog(null)}
+          onSave={async (body) => {
+            const ok = await ruleActions.saveRule(dialog.itemId, body)
+            if (ok) {
+              notify('Aturan hitung disimpan.')
+              setDialog(null)
+            }
+            return ok
+          }}
+          onRemove={async () => {
+            const ok = await ruleActions.removeRule(dialog.itemId)
+            if (ok) {
+              notify('Aturan hitung dihapus.')
+              setDialog(null)
+            }
+            return ok
+          }}
         />
       )}
       {dialog?.kind === 'delete' && (

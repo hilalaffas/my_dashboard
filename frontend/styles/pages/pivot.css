@@ -1,0 +1,474 @@
+/* Tabel pivot halaman Cost: kategori / sub / item berjajar ke samping dengan sel gabungan, kolom kustom di kanan.
+   Animasi hanya transform dan opacity; warna boleh bertransisi. */
+
+.pv-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pv-toolbar .outline-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pv-wrap {
+  max-height: min(72vh, 760px);
+  min-height: 240px;
+  margin-top: 20px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.pv-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.pv-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 11px 13px;
+  background: #f7faf5;
+  border-bottom: 1px solid #e3eadf;
+  color: #6d836f;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.pv-table td {
+  padding: 9px 13px;
+  border-bottom: 1px solid #eef1ec;
+  color: #526158;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.pv-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ---------- Sel gabungan kategori dan sub ---------- */
+.pv-group {
+  min-width: 150px;
+  border-right: 1px solid #eef1ec;
+  background: #fbfdfa;
+  color: #35573d;
+  font-weight: 700;
+  vertical-align: top;
+}
+
+.pv-cat {
+  background: #f7faf5;
+}
+
+/* Label tetap terlihat saat blok yang tinggi di-scroll */
+.pv-group-inner {
+  position: sticky;
+  top: 44px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.pv-group-name {
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+/* Tombol − / +: garis tegak membesar dan mengecil saat dibuka atau ditutup */
+.pv-toggle {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  padding: 0;
+  border: 1px solid #c3d3be;
+  border-radius: 5px;
+  background: #fff;
+  color: #4d7654;
+  transition: background-color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std);
+}
+
+.pv-toggle::before,
+.pv-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 2px;
+  margin: -1px 0 0 -4px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.pv-toggle::after {
+  transform: rotate(90deg) scaleX(0);
+}
+
+.pv-toggle[aria-expanded='false']::after {
+  transform: rotate(90deg) scaleX(1);
+}
+
+.pv-toggle:hover {
+  background: #eaf2e5;
+  border-color: #8fbf80;
+}
+
+.pv-toggle:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+}
+
+.pv-toggle:active {
+  transform: scale(0.88);
+}
+
+/* ---------- Isi baris ---------- */
+.pv-item {
+  color: #354238;
+  font-weight: 600;
+}
+
+.pv-muted {
+  color: #9aa39b;
+  font-size: 11px;
+}
+
+.pv-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-debit { color: #7a5c1e; font-weight: 700; }
+.pv-credit { color: #3f6b47; font-weight: 700; }
+.pv-balance { color: #727e75; }
+
+.pv-sub-total td:not(.pv-group) {
+  background: #f8fbf6;
+  color: #35573d;
+  font-weight: 700;
+}
+
+.pv-subtotal-label {
+  text-align: right;
+  font-size: 11px;
+}
+
+.pv-cat-total td {
+  background: #eef5ea;
+  border-bottom: 2px solid #dfe8dc;
+  color: #223b27;
+  font-weight: 800;
+}
+
+.pv-total-label {
+  letter-spacing: 0.02em;
+}
+
+.pv-cat-collapsed td:not(.pv-group),
+.pv-sub-collapsed td:not(.pv-group) {
+  background: #fbfdfa;
+}
+
+.pv-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 13px;
+  background: #f1f7ee;
+  border-top: 2px solid #dfe8dc;
+  color: #223b27;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Baris yang baru muncul (blok dibuka) masuk dengan halus */
+.pv-row.is-new {
+  animation: pv-row-in 0.26s var(--ease-out);
+}
+
+@keyframes pv-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+/* ---------- Kolom kustom ---------- */
+.pv-custom {
+  min-width: 130px;
+}
+
+.pv-t-number,
+.pv-t-currency {
+  text-align: right;
+}
+
+.pv-agg {
+  font-weight: 700;
+  color: #35573d;
+}
+
+.pv-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.pv-head-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-head-menu {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.pv-menu {
+  top: calc(100% + 4px);
+  min-width: 170px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.pv-menu .popover-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pv-danger {
+  color: #b4432d;
+}
+
+/* Sel yang bisa diedit di tempat */
+.pv-cell {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: text;
+  transition: background-color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std);
+}
+
+.pv-cell:hover {
+  background: #f4f8f1;
+  border-color: #dfe8dc;
+}
+
+.pv-cell:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 1px;
+}
+
+.pv-placeholder {
+  color: #c3cbc3;
+}
+
+.pv-input {
+  width: 100%;
+  min-width: 110px;
+  padding: 5px 8px;
+  border: 1px solid #8fbf80;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 0 0 3px #8fbf8033;
+  color: #354238;
+  font: inherit;
+  font-size: 12px;
+  outline: 0;
+}
+
+.pv-t-number .pv-input,
+.pv-t-currency .pv-input {
+  text-align: right;
+}
+
+.pv-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #e4f1dd;
+  color: #3f6b47;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pv-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid #b9cfb3;
+  border-radius: 6px;
+  background: #fff;
+  transition: background-color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std),
+    transform var(--t-base) var(--ease-out);
+}
+
+.pv-check svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  transition: stroke-dashoffset var(--t-base) var(--ease-out);
+}
+
+.pv-check.is-on {
+  background: #4d7654;
+  border-color: #4d7654;
+}
+
+.pv-check.is-on svg {
+  stroke-dashoffset: 0;
+}
+
+.pv-check:active {
+  transform: scale(0.86);
+}
+
+.pv-check:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+}
+
+/* ---------- Kolom aksi ---------- */
+.pv-tail {
+  width: 72px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pv-link {
+  color: #4d7654;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pv-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Formulir kolom ---------- */
+.pv-field {
+  display: grid;
+  gap: 8px;
+}
+
+.pv-field-label {
+  color: #4a554c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pv-types {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.pv-type {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  transition: border-color var(--t-fast) var(--ease-std), background-color var(--t-fast) var(--ease-std),
+    transform var(--t-base) var(--ease-out);
+}
+
+.pv-type b {
+  display: block;
+  color: #354238;
+  font-size: 12px;
+}
+
+.pv-type small {
+  display: block;
+  margin-top: 3px;
+  color: #8a938c;
+  font-size: 11px;
+}
+
+.pv-type[aria-checked='true'] {
+  border-color: #4d7654;
+  background: #f1f7ee;
+  box-shadow: inset 0 0 0 1px #4d7654;
+}
+
+.pv-type:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pv-type:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pv-type:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.form textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.form textarea:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .pv-toolbar {
+    justify-content: flex-start;
+    margin-top: 14px;
+  }
+
+  .pv-types {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-row.is-new {
+    animation: none;
+  }
+}

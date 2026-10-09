@@ -19,6 +19,7 @@ import { useToast } from '@/components/common/toastProvider'
 import { EstimateFormModal } from '@/components/estimates/estimateFormModal'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useEstimates } from '@/hooks/useEstimates'
+import { useMonthBudget } from '@/hooks/useMonthBudget'
 import { buildCostLines, debitByType, totalsOf } from '@/lib/costLines'
 import { exportCsv } from '@/lib/exportCsv'
 import { formatCompactRp, formatRp } from '@/lib/formatters'
@@ -46,11 +47,12 @@ export function OverviewPage() {
   const { user } = useAuth()
   const { tree } = useAccounts(notify)
   const { rows: manualRows, actions } = useEstimates(notify)
+  const { budgetOf } = useMonthBudget(notify)
   const [showAll, setShowAll] = useState(false)
   const [creating, setCreating] = useState(false)
 
   // Angka Overview dihitung dari baris yang sama dengan halaman Cost estimates
-  const lines = useMemo(() => buildCostLines(tree, manualRows), [tree, manualRows])
+  const lines = useMemo(() => buildCostLines(tree, manualRows, budgetOf), [tree, manualRows, budgetOf])
   const { debit, credit, balance } = totalsOf(lines)
   const spendingRatio = credit > 0 ? (debit / credit) * 100 : null
 

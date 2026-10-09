@@ -1,8 +1,8 @@
 'use client'
-import { ChevronRight, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, ChevronRight, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { categoryTotal, subTotal } from '@/lib/accountsTree'
 import { formatRp } from '@/lib/formatters'
-export function CategoryCard({ category, open, onToggle, onRequest }) {
+export function CategoryCard({ category, open, onToggle, onRequest, canRule = false }) {
   const categoryId = category.id
   return (
     <section className="panel account-card">
@@ -104,9 +104,31 @@ export function CategoryCard({ category, open, onToggle, onRequest }) {
               <ul className="item-list">
                 {sub.items.map((item) => (
                   <li className="node-row item-row" key={item.id}>
-                    <span className="node-main">{item.name}</span>
+                    <span className="node-main">
+                      {item.name}
+                      {item.hint && <small className="node-hint">{item.hint}</small>}
+                    </span>
                     <span className="node-amount">{formatRp(item.amount)}</span>
                     <div className="row-actions">
+                      {canRule && (
+                        <button
+                          className={`icon-action${item.rule ? ' has-rule' : ''}`}
+                          aria-label={`Atur cara hitung ${item.name}`}
+                          title="Atur cara hitung (hari kerja, mingguan, dll)"
+                          onClick={() =>
+                            onRequest({
+                              kind: 'rule',
+                              categoryId,
+                              subId: sub.id,
+                              itemId: item.id,
+                              label: item.name,
+                              rawAmount: item.rawAmount ?? item.amount,
+                            })
+                          }
+                        >
+                          <CalendarClock size={15} />
+                        </button>
+                      )}
                       <button
                         className="icon-action"
                         aria-label={`Ubah ${item.name}`}
@@ -118,7 +140,7 @@ export function CategoryCard({ category, open, onToggle, onRequest }) {
                             categoryId,
                             subId: sub.id,
                             itemId: item.id,
-                            initial: { name: item.name, amount: item.amount },
+                            initial: { name: item.name, amount: item.rawAmount ?? item.amount },
                           })
                         }
                       >
