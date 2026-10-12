@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 const tabs = [
   { label: 'Struktur', href: '/accounts' },
   { label: 'Kalender', href: '/accounts/calendar' },
+  { label: 'Harian', href: '/accounts/daily' },
 ]
 
 /** Tab di dalam menu Accounts. Gaya tab sama dengan menu Manage. */

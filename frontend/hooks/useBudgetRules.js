@@ -53,5 +53,21 @@ export function useBudgetRules(onError) {
     [onError],
   )
 
-  return { supported: isApiEnabled, ready, rules, actions: { saveRule, removeRule } }
+  /** Mengganti mode AUTO/MANUAL tanpa mengubah bagian aturan lainnya. */
+  const setMode = useCallback(
+    async (itemId, mode) => {
+      const current = rules.get(itemId)
+      if (!current) return false
+      return saveRule(itemId, {
+        unit: current.unit,
+        basis: current.basis,
+        rate: current.rate,
+        weekDay: current.weekDay,
+        mode,
+      })
+    },
+    [rules, saveRule],
+  )
+
+  return { supported: isApiEnabled, ready, rules, actions: { saveRule, removeRule, setMode } }
 }

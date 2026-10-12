@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { makeBudgetOf, monthDays, MONTHS } from '@/lib/budgetCalendar'
+import { makeBudgetOf, monthDays, MONTHS, toISO } from '@/lib/budgetCalendar'
 import { useBudgetCalendar } from './useBudgetCalendar'
 import { useBudgetRules } from './useBudgetRules'
 
@@ -34,6 +34,7 @@ export function useMonthBudget(onError) {
     days,
     year,
     month,
+    todayIso: today ? toISO(today.getFullYear(), today.getMonth() + 1, today.getDate()) : '',
     monthLabel: year ? `${MONTHS[month - 1]} ${year}` : '',
     ready: Boolean(today) && calendar.ready && rulesReady,
   }

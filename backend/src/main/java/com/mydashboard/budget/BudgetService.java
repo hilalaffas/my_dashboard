@@ -7,6 +7,8 @@ import com.mydashboard.common.exception.BadRequestException;
 import com.mydashboard.common.exception.NotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +33,8 @@ public class BudgetService {
     private final HolidayRepository holidays;
     private final LeaveDayRepository leaves;
     private final BudgetRuleRepository rules;
+    private final DailyEntryRepository entries;
+    private final MonthClosingRepository closings;
     private final ItemRepository items;
 
     @Transactional(readOnly = true)
@@ -96,6 +100,7 @@ public class BudgetService {
         rule.setBasis(req.basis().name());
         rule.setRate(rate);
         rule.setWeekDay(req.weekDay() == null ? 1 : req.weekDay());
+        if (req.mode() != null) rule.setMode(req.mode().name());
         return toRule(rules.save(rule));
     }
 
@@ -104,8 +109,54 @@ public class BudgetService {
         rules.findByItemIdAndOwnerId(itemId, ownerId).ifPresent(rules::delete);
     }
 
+    /** Catatan harian pada rentang tanggal (paling lama 400 hari, cukup untuk satu bulan atau satu tahun). */
+    @Transactional(readOnly = true)
+    public List<EntryResponse> entries(UUID ownerId, LocalDate from, LocalDate to) {
+        requireYear(from.getYear());
+        requireYear(to.getYear());
+        if (to.isBefore(from) || ChronoUnit.DAYS.between(from, to) > 400) {
+            throw new BadRequestException("Rentang tanggal tidak valid (maksimal 400 hari).");
+        }
+        return entries.findAllByOwnerIdAndEntryDateBetweenOrderByEntryDate(ownerId, from, to).stream()
+                .map(e -> new EntryResponse(e.getItemId(), e.getEntryDate(), e.getAmount()))
+                .toList();
+    }
+
+    /** Mengisi, mengubah, atau (amount kosong) menghapus catatan harian sebuah item. Item harus punya aturan hitung. */
+    public EntryResponse saveEntry(UUID ownerId, EntryRequest req) {
+        requireYear(req.date().getYear());
+        if (closings.existsByOwnerIdAndClosingMonth(ownerId, req.date().withDayOfMonth(1))) {
+            throw new BadRequestException("Bulan " + YearMonth.from(req.date()) + " sudah ditutup. Buka kembali untuk mengubah catatan.");
+        }
+        rules.findByItemIdAndOwnerId(req.itemId(), ownerId)
+                .orElseThrow(() -> new BadRequestException("Atur cara hitung item ini dulu sebelum mencatat pengeluaran harian."));
+
+        DailyEntry existing = entries.findByItemIdAndEntryDateAndOwnerId(req.itemId(), req.date(), ownerId).orElse(null);
+        if (req.amount() == null) {
+            if (existing != null) entries.delete(existing);
+            return new EntryResponse(req.itemId(), req.date(), null);
+        }
+        if (req.amount().compareTo(MAX_RATE) >= 0) throw new BadRequestException("Jumlah terlalu besar.");
+
+        DailyEntry entry = existing != null ? existing : new DailyEntry();
+        if (existing == null) {
+            entry.setOwnerId(ownerId);
+            entry.setItemId(req.itemId());
+            entry.setEntryDate(req.date());
+        }
+        entry.setAmount(req.amount());
+        DailyEntry saved = entries.save(entry);
+        return new EntryResponse(saved.getItemId(), saved.getEntryDate(), saved.getAmount());
+    }
+
+    /** Menyimpan banyak catatan sekaligus; bila satu ditolak (mis. bulan tertutup), seluruhnya dibatalkan. */
+    public List<EntryResponse> saveEntries(UUID ownerId, BatchEntryRequest req) {
+        return req.entries().stream().map(entry -> saveEntry(ownerId, entry)).toList();
+    }
+
     private RuleResponse toRule(BudgetRule r) {
-        return new RuleResponse(r.getItemId(), Unit.valueOf(r.getUnit()), Basis.valueOf(r.getBasis()), r.getRate(), r.getWeekDay());
+        return new RuleResponse(
+                r.getItemId(), Unit.valueOf(r.getUnit()), Basis.valueOf(r.getBasis()), r.getRate(), r.getWeekDay(), Mode.valueOf(r.getMode()));
     }
 
     private void requireYear(int year) {

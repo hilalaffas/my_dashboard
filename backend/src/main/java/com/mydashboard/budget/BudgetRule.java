@@ -37,6 +37,10 @@ public class BudgetRule {
     @Column(precision = 15, scale = 2)
     private BigDecimal rate;
 
+    /** Nama enum Mode: AUTO (terpotong otomatis) atau MANUAL (diisi pengguna tiap hari). */
+    @Column(nullable = false, length = 6)
+    private String mode = "AUTO";
+
     /** Untuk unit WEEK: hari penarikan, 1 = Senin sampai 7 = Minggu. */
     @Column(name = "week_day", nullable = false)
     private int weekDay = 1;

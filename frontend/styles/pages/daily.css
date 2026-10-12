@@ -1,0 +1,551 @@
+/* Pengeluaran harian: deretan hari, panel hari, saklar mode, dan rekonsiliasi.
+   Animasi hanya transform dan opacity. */
+
+.dt-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dt-month h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+
+.dt-muted {
+  margin: 0;
+  color: #8a938c;
+  font-size: 12px;
+}
+
+.dt-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid #f1dcb4;
+  border-radius: 12px;
+  background: #fff7e8;
+  color: #8a5c12;
+  font-size: 13px;
+}
+
+/* ---------- Deretan hari ---------- */
+.dt-strip {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.dt-chip {
+  position: relative;
+  display: grid;
+  flex: none;
+  justify-items: center;
+  gap: 2px;
+  width: 44px;
+  padding: 8px 0 12px;
+  border: 1px solid #eef1ec;
+  border-radius: 12px;
+  background: #fff;
+  color: #35573d;
+  transition:
+    transform var(--t-base) var(--ease-out),
+    background-color var(--t-fast) var(--ease-std),
+    border-color var(--t-fast) var(--ease-std),
+    color var(--t-fast) var(--ease-std);
+}
+
+.dt-chip small {
+  color: #8a938c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dt-chip b {
+  font-size: 15px;
+}
+
+.dt-chip.is-off {
+  background: #faf7f2;
+  color: #b8a79b;
+}
+
+.dt-chip.is-today {
+  border-color: #4d7654;
+}
+
+.dt-chip[aria-pressed='true'] {
+  border-color: #4d7654;
+  background: #4d7654;
+  color: #fff;
+}
+
+.dt-chip[aria-pressed='true'] small {
+  color: #d6e6d2;
+}
+
+.dt-chip:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+}
+
+.dt-dot {
+  position: absolute;
+  bottom: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.dt-dot.pending { background: #e0a458; }
+.dt-dot.over { background: #c75a43; }
+.dt-dot.ok { background: #7fb36e; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .dt-chip:not([aria-pressed='true']):hover {
+    border-color: #8fbf80;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dt-chip:active {
+    transform: scale(0.94);
+    transition-duration: 80ms;
+  }
+}
+
+/* ---------- Panel hari ---------- */
+.dt-day {
+  margin-bottom: 20px;
+}
+
+.dt-day-body {
+  margin-top: 8px;
+  animation: dt-in 0.28s var(--ease-out);
+}
+
+@keyframes dt-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+.dt-day-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.dt-day-head h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -0.2px;
+}
+
+.dt-day-head p {
+  margin: 4px 0 0;
+  color: #6f7f73;
+  font-size: 12px;
+}
+
+.dt-day-totals {
+  display: flex;
+  gap: 18px;
+  margin: 0;
+}
+
+.dt-day-totals dt {
+  color: #8a938c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dt-day-totals dd {
+  margin: 2px 0 0;
+  color: #223b27;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dt-rows {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #eef1ec;
+  border-radius: 12px;
+  background: #fbfdfa;
+  transition: background-color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std);
+}
+
+.dt-row.is-pending {
+  border-color: #f1dcb4;
+  background: #fffaf0;
+}
+
+.dt-row-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dt-row-info b {
+  color: #354238;
+  font-size: 13px;
+}
+
+.dt-row-info small {
+  color: #8a938c;
+  font-size: 11px;
+}
+
+.dt-row-control {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dt-amount {
+  color: #223b27;
+  font-size: 14px;
+}
+
+.dt-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #fdeeea;
+  color: #a4503c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.dt-badge.is-auto {
+  background: #e4f1dd;
+  color: #3f6b47;
+}
+
+.dt-input {
+  width: 140px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  transition: border-color var(--t-fast) var(--ease-std);
+}
+
+.dt-input:focus-visible {
+  border-color: #8fbf80;
+  outline: 2px solid #8fbf8040;
+  outline-offset: 0;
+}
+
+.dt-input:disabled {
+  opacity: 0.5;
+}
+
+/* ---------- Saklar mode Auto / Manual ---------- */
+.dt-mode {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef1ec;
+}
+
+.dt-mode::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: #4d7654;
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.dt-mode[data-mode='MANUAL']::before {
+  transform: translateX(100%);
+}
+
+.dt-mode button {
+  position: relative;
+  z-index: 1;
+  padding: 5px 13px;
+  border: 0;
+  background: none;
+  color: #6f7f73;
+  font-size: 11px;
+  font-weight: 700;
+  transition: color var(--t-fast) var(--ease-std);
+}
+
+.dt-mode button[aria-checked='true'] {
+  color: #fff;
+}
+
+.dt-mode button:focus-visible {
+  outline: 2px solid #8fbf80;
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.dt-mode button:disabled {
+  cursor: wait;
+}
+
+/* ---------- Rekonsiliasi ---------- */
+.dt-table td {
+  vertical-align: middle;
+}
+
+.dt-save { color: #3f6b47; font-weight: 700; }
+.dt-over { color: #b4432d; font-weight: 700; }
+.dt-even { color: #727e75; }
+
+.dt-pending {
+  display: block;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #b27b1c;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dt-bar {
+  display: block;
+  width: 110px;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef1ec;
+}
+
+.dt-bar i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: #7fb36e;
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.dt-bar i.is-over {
+  background: #c75a43;
+}
+
+@media (max-width: 640px) {
+  .dt-day-head {
+    flex-direction: column;
+  }
+
+  .dt-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dt-row-control {
+    justify-content: space-between;
+  }
+
+  .dt-input {
+    width: 100%;
+    flex: 1;
+  }
+
+  .dt-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-day-body {
+    animation: none;
+  }
+}
+
+/* ---------- Fase 4: penutupan bulan, isi massal, realisasi di Overview dan Reports ---------- */
+.dt-month-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dt-closed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #eef1ec;
+  color: #526158;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dt-month-actions .outline-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dt-banner.is-lock {
+  border-color: #dfe8dc;
+  background: #f4f8f1;
+  color: #35573d;
+}
+
+.dt-banner.is-lock svg {
+  vertical-align: -2px;
+}
+
+.dt-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dt-history {
+  margin-top: 20px;
+}
+
+.dt-real {
+  margin-bottom: 20px;
+}
+
+.dt-real-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.dt-real-stats > div {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f7faf5;
+}
+
+.dt-real-stats span {
+  color: #6f7f73;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dt-real-stats strong {
+  color: #223b27;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+
+.dt-real-stats small {
+  color: #8a938c;
+  font-size: 11px;
+}
+
+.dt-note {
+  margin: -6px 0 16px;
+  color: #b27b1c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dt-cats {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dt-cat-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.dt-cat-top b {
+  color: #354238;
+}
+
+.dt-cat-top span {
+  color: #526158;
+  font-weight: 700;
+}
+
+.dt-cat-top em {
+  color: #8a938c;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.dt-bar.is-wide {
+  width: 100%;
+  height: 8px;
+}
+
+@media (max-width: 640px) {
+  .dt-real-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-month {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dt-month-actions {
+    justify-content: flex-start;
+  }
+
+  .dt-cat-top {
+    flex-direction: column;
+    gap: 2px;
+  }
+}

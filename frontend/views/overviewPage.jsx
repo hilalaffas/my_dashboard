@@ -15,11 +15,13 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '@/components/auth/authProvider'
 import { MetricCard } from '@/components/common/metricCard'
 import { PageFooter } from '@/components/common/pageFooter'
+import { RealisationPanel } from '@/components/daily/realisationPanel'
 import { useToast } from '@/components/common/toastProvider'
 import { EstimateFormModal } from '@/components/estimates/estimateFormModal'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useEstimates } from '@/hooks/useEstimates'
 import { useMonthBudget } from '@/hooks/useMonthBudget'
+import { useMonthReconcile } from '@/hooks/useMonthReconcile'
 import { buildCostLines, debitByType, totalsOf } from '@/lib/costLines'
 import { exportCsv } from '@/lib/exportCsv'
 import { formatCompactRp, formatRp } from '@/lib/formatters'
@@ -47,7 +49,9 @@ export function OverviewPage() {
   const { user } = useAuth()
   const { tree } = useAccounts(notify)
   const { rows: manualRows, actions } = useEstimates(notify)
-  const { budgetOf } = useMonthBudget(notify)
+  const monthBudget = useMonthBudget(notify)
+  const { budgetOf } = monthBudget
+  const recon = useMonthReconcile(tree, monthBudget, notify)
   const [showAll, setShowAll] = useState(false)
   const [creating, setCreating] = useState(false)
 
@@ -200,6 +204,8 @@ export function OverviewPage() {
           </div>
         </section>
       </div>
+
+      {recon.rec.items.length > 0 && <RealisationPanel rec={recon.rec} monthLabel={monthBudget.monthLabel} />}
 
       <section className="panel table-panel">
         <div className="panel-heading">

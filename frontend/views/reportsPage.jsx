@@ -1,27 +1,40 @@
 'use client'
 import { Download, Layers, ListTree, Receipt, WalletCards } from 'lucide-react'
 import Link from 'next/link'
+import { useMemo } from 'react'
 import { MetricCard } from '@/components/common/metricCard'
 import { PageFooter } from '@/components/common/pageFooter'
 import { useToast } from '@/components/common/toastProvider'
+import { RealisationPanel } from '@/components/daily/realisationPanel'
 import { useAccounts } from '@/hooks/useAccounts'
+import { useMonthBudget } from '@/hooks/useMonthBudget'
+import { useMonthReconcile } from '@/hooks/useMonthReconcile'
 import { categoryTotal } from '@/lib/accountsTree'
+import { applyBudget } from '@/lib/budgetCalendar'
 import { exportCsv } from '@/lib/exportCsv'
 import { formatRp } from '@/lib/formatters'
+
 export function ReportsPage() {
   const notify = useToast()
-  const { tree } = useAccounts(notify)
+  const { tree: raw } = useAccounts(notify)
+  const monthBudget = useMonthBudget(notify)
+  // Nominal mengikuti aturan hitung bulan berjalan, sama seperti Accounts, Cost, dan Overview
+  const tree = useMemo(() => applyBudget(raw, monthBudget.budgetOf), [raw, monthBudget.budgetOf])
+  const recon = useMonthReconcile(raw, monthBudget, notify)
+
   const total = tree.reduce((sum, c) => sum + categoryTotal(c), 0)
   const subCount = tree.reduce((sum, c) => sum + c.subs.length, 0)
   const itemCount = tree.reduce((sum, c) => sum + c.subs.reduce((n, s) => n + s.items.length, 0), 0)
+
   function handleExport() {
-    const lines = [['Kategori', 'Sub kategori', 'Item', 'Nominal']]
+    const lines = [['Kategori', 'Sub kategori', 'Item', `Nominal ${monthBudget.monthLabel}`.trim()]]
     tree.forEach((c) =>
       c.subs.forEach((s) => s.items.forEach((i) => lines.push([c.name, s.name, i.name, i.amount]))),
     )
     exportCsv('accounts-report.csv', lines)
     notify('Laporan accounts diunduh.')
   }
+
   return (
     <>
       <div className="page-heading">
@@ -30,7 +43,7 @@ export function ReportsPage() {
             <span className="status-dot" /> Reports
           </div>
           <h1>Laporan per kategori</h1>
-          <p>Ringkasan nominal dari struktur Accounts Anda.</p>
+          <p>Ringkasan nominal dari struktur Accounts Anda{monthBudget.monthLabel ? `, anggaran ${monthBudget.monthLabel}` : ''}.</p>
         </div>
         <div className="heading-actions">
           <button className="primary-button" onClick={handleExport}>
@@ -77,6 +90,7 @@ export function ReportsPage() {
           {tree.length === 0 && <p className="empty-cell">Belum ada kategori.</p>}
         </div>
       </section>
+      {recon.rec.items.length > 0 && <RealisationPanel rec={recon.rec} monthLabel={monthBudget.monthLabel} />}
       <PageFooter />
     </>
   )
